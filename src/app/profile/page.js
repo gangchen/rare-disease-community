@@ -47,8 +47,8 @@ export default function ProfilePage() {
     fetch('/api/auth/apikeys', {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((r) => r.ok ? r.json() : [])
-      .then(setApiKeys);
+      .then((r) => r.ok ? r.json() : { items: [] })
+      .then((data) => setApiKeys(data.items || []));
   }, [router]);
 
   async function handleSave() {
@@ -110,16 +110,17 @@ export default function ProfilePage() {
     }
   }
 
-  async function deleteApiKey(keyId) {
+  async function deleteApiKey(key) {
     const token = localStorage.getItem('token');
     if (!token) return;
 
     try {
-      await fetch(`/api/auth/apikeys?id=${keyId}`, {
+      await fetch('/api/auth/apikeys', {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ key }),
       });
-      setApiKeys(apiKeys.filter((k) => k.id !== keyId));
+      setApiKeys(apiKeys.filter((k) => k.key !== key));
     } catch {
       setError('删除失败');
     }
@@ -288,25 +289,14 @@ export default function ProfilePage() {
           ) : (
             <div className="space-y-2">
               {apiKeys.map((k) => (
-                <div key={k.id} className="flex items-center justify-between px-4 py-3 bg-surface-700 rounded-xl">
+                <div key={k.key} className="flex items-center justify-between px-4 py-3 bg-surface-700 rounded-xl">
                   <div>
                     <p className="text-sm font-medium text-white">{k.name}</p>
-                    <p className="text-xs text-gray-500">
-                      {k.key ? `${k.key.slice(0, 12)}...` : `创建于 ${k.created_at || ''}`}
-                    </p>
+                    <p className="text-xs text-gray-500">{k.key}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {k.key && (
-                      <button
-                        onClick={() => copyToClipboard(k.key)}
-                        className="p-1.5 text-gray-400 hover:text-primary-400 transition"
-                        title="复制"
-                      >
-                        {copiedKey === k.key ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
-                      </button>
-                    )}
                     <button
-                      onClick={() => deleteApiKey(k.id)}
+                      onClick={() => deleteApiKey(k.key)}
                       className="p-1.5 text-gray-400 hover:text-red-400 transition"
                       title="删除"
                     >
