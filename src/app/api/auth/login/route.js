@@ -5,34 +5,42 @@ import { generateToken } from '@/lib/auth';
 // POST /api/auth/login
 // Body: { email, password }
 export async function POST(request) {
-  const body = await request.json();
-  const { email, password } = body;
+  try {
+    const body = await request.json();
+    const { email, password } = body;
 
-  if (!email || !password) {
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: '缺少必填字段: email, password' },
+        { status: 400 }
+      );
+    }
+
+    const user = authenticateUser(email, password);
+
+    if (!user) {
+      return NextResponse.json(
+        { error: '邮箱或密码错误' },
+        { status: 401 }
+      );
+    }
+
+    const { token, expiresIn } = generateToken(user.id, user.role);
+
+    return NextResponse.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+      },
+      token,
+      expiresIn,
+    });
+  } catch (err) {
+    console.error('登录失败:', err);
     return NextResponse.json(
-      { error: '缺少必填字段: email, password' },
-      { status: 400 }
+      { error: '服务器内部错误，请稍后重试' },
+      { status: 500 }
     );
   }
-
-  const user = authenticateUser(email, password);
-
-  if (!user) {
-    return NextResponse.json(
-      { error: '邮箱或密码错误' },
-      { status: 401 }
-    );
-  }
-
-  const { token, expiresIn } = generateToken(user.id, user.role);
-
-  return NextResponse.json({
-    user: {
-      id: user.id,
-      username: user.username,
-      role: user.role,
-    },
-    token,
-    expiresIn,
-  });
 }

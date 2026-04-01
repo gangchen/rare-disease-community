@@ -32,13 +32,14 @@ export default function RegisterPage() {
         body: JSON.stringify(form),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error); return; }
+      if (!res.ok) { setError(data.error || '注册失败，请重试'); return; }
 
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       router.push('/');
-    } catch {
-      setError('网络错误，请重试');
+    } catch (err) {
+      console.error('Register error:', err);
+      setError('网络错误，请检查网络连接后重试');
     } finally {
       setLoading(false);
     }
