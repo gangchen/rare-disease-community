@@ -30,21 +30,10 @@ git pull origin "$BRANCH" 2>&1 | tee -a "$LOG_FILE"
 info "安装依赖..."
 npm ci --omit=dev 2>&1 | tail -1 | tee -a "$LOG_FILE"
 
-# 检查数据库是否需要更新（检测缺失的表）
+# 数据库迁移（只添加缺失的表，不影响现有数据）
 if [ -f "$DB_FILE" ]; then
-  MISSING_TABLES=""
-  for TABLE in diseases users posts comments likes news tokens api_keys; do
-    EXISTS=$(sqlite3 "$DB_FILE" "SELECT name FROM sqlite_master WHERE type='table' AND name='$TABLE';" 2>/dev/null || echo "")
-    if [ -z "$EXISTS" ]; then
-      MISSING_TABLES="$MISSING_TABLES $TABLE"
-    fi
-  done
-
-  if [ -n "$MISSING_TABLES" ]; then
-    warn "检测到缺失的数据库表:$MISSING_TABLES"
-    warn "重新初始化数据库..."
-    node scripts/init-db.js 2>&1 | tee -a "$LOG_FILE"
-  fi
+  info "检查数据库迁移..."
+  node scripts/migrate-db.js 2>&1 | tee -a "$LOG_FILE"
 else
   info "数据库不存在，初始化..."
   mkdir -p data
