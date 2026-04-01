@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: rare-disease-community
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      # 数据库文件持久化到宿主机，容器重建不丢数据
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
