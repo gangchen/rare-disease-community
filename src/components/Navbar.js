@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Heart, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { Heart, Menu, X, User, LogIn } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 const NAV_ITEMS = [
   { href: '/', label: '首页' },
@@ -16,6 +16,31 @@ const NAV_ITEMS = [
 export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      try { setUser(JSON.parse(stored)); } catch { /* ignore */ }
+    }
+
+    function onStorage() {
+      const s = localStorage.getItem('user');
+      setUser(s ? JSON.parse(s) : null);
+    }
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  // Re-check on route change
+  useEffect(() => {
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      try { setUser(JSON.parse(stored)); } catch { setUser(null); }
+    } else {
+      setUser(null);
+    }
+  }, [pathname]);
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-primary-100">
@@ -45,6 +70,31 @@ export default function Navbar() {
               </li>
             );
           })}
+
+          {/* Auth Links */}
+          <li className="ml-2 pl-2 border-l border-gray-200">
+            {user ? (
+              <Link
+                href="/profile"
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  pathname === '/profile'
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-gray-500 hover:text-primary-700 hover:bg-primary-50/50'
+                }`}
+              >
+                <User className="w-4 h-4" />
+                {user.username}
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-primary-600 hover:bg-primary-50 transition-colors"
+              >
+                <LogIn className="w-4 h-4" />
+                登录
+              </Link>
+            )}
+          </li>
         </ul>
 
         {/* Mobile Toggle */}
@@ -74,6 +124,26 @@ export default function Navbar() {
               </Link>
             );
           })}
+          {/* Mobile Auth Link */}
+          {user ? (
+            <Link
+              href="/profile"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-primary-600 border-b border-gray-50"
+            >
+              <User className="w-4 h-4" />
+              {user.username}
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-primary-600 border-b border-gray-50"
+            >
+              <LogIn className="w-4 h-4" />
+              登录 / 注册
+            </Link>
+          )}
         </div>
       )}
     </nav>
