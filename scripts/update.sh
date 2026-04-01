@@ -16,7 +16,8 @@ info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 cd "$APP_DIR"
 
 info "拉取最新代码..."
-git pull origin main
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+git pull origin "$BRANCH"
 
 info "安装依赖..."
 npm ci --omit=dev

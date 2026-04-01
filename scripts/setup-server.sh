@@ -66,7 +66,8 @@ info "5/7 克隆项目..."
 if [ -d "$APP_DIR" ]; then
   warn "项目目录已存在，拉取最新代码..."
   cd "$APP_DIR"
-  sudo -u "$APP_USER" git pull origin main || true
+  BRANCH=$(sudo -u "$APP_USER" git rev-parse --abbrev-ref HEAD)
+  sudo -u "$APP_USER" git pull origin "$BRANCH" || true
 else
   sudo -u "$APP_USER" git clone https://github.com/gangchen/rare-disease-community.git "$APP_DIR"
   cd "$APP_DIR"
