@@ -1,93 +1,120 @@
-// 模拟数据库 - 用户数据
-
+import { getDb } from '@/lib/db';
 import { createPasswordHash, verifyPassword } from '@/lib/auth';
 
-let nextUserId = 10;
+function getDiseaseIds(userId) {
+  const db = getDb();
+  return db.prepare('SELECT disease_id FROM user_diseases WHERE user_id = ?').all(userId).map((r) => r.disease_id);
+}
 
-// 默认密码: "password123"（仅用于演示）
-const defaultPwd = createPasswordHash('password123');
+function setDiseaseIds(userId, diseaseIds) {
+  const db = getDb();
+  db.prepare('DELETE FROM user_diseases WHERE user_id = ?').run(userId);
+  const insert = db.prepare('INSERT INTO user_diseases (user_id, disease_id) VALUES (?, ?)');
+  for (const did of diseaseIds) {
+    insert.run(userId, did);
+  }
+}
 
-const users = [
-  { id: 1, username: '希望之光', email: 'hope@example.com', password: defaultPwd.hash, salt: defaultPwd.salt, role: 'user', diseaseIds: [2], joinDate: '2025-06-15', bio: 'SMA患儿家长，记录治疗历程' },
-  { id: 2, username: '守护者', email: 'guardian@example.com', password: defaultPwd.hash, salt: defaultPwd.salt, role: 'user', diseaseIds: [1], joinDate: '2025-04-20', bio: 'ALS患者家属，分享护理经验' },
-  { id: 3, username: '同路人', email: 'together@example.com', password: defaultPwd.hash, salt: defaultPwd.salt, role: 'user', diseaseIds: [2], joinDate: '2025-08-10', bio: 'SMA家庭，一起加油' },
-  { id: 4, username: '医学前沿', email: 'medfront@example.com', password: defaultPwd.hash, salt: defaultPwd.salt, role: 'expert', diseaseIds: [], joinDate: '2025-03-01', bio: '临床医学研究者，关注罕见病药物研发' },
-  { id: 5, username: '营养师小王', email: 'nutrition@example.com', password: defaultPwd.hash, salt: defaultPwd.salt, role: 'expert', diseaseIds: [4], joinDate: '2025-07-22', bio: '注册营养师，专注PKU饮食管理' },
-  { id: 6, username: '运动达人', email: 'sports@example.com', password: defaultPwd.hash, salt: defaultPwd.salt, role: 'user', diseaseIds: [5], joinDate: '2025-09-05', bio: '血友病患者，热爱运动' },
-  { id: 7, username: '政策观察', email: 'policy@example.com', password: defaultPwd.hash, salt: defaultPwd.salt, role: 'admin', diseaseIds: [], joinDate: '2025-01-10', bio: '关注罕见病政策和医保动态' },
-  { id: 8, username: '坚强妈妈', email: 'strongmom@example.com', password: defaultPwd.hash, salt: defaultPwd.salt, role: 'user', diseaseIds: [13], joinDate: '2025-05-18', bio: '成骨不全症患儿妈妈' },
-  { id: 9, username: '心理咨询师', email: 'counselor@example.com', password: defaultPwd.hash, salt: defaultPwd.salt, role: 'expert', diseaseIds: [], joinDate: '2025-02-28', bio: '国家二级心理咨询师，志愿服务罕见病群体' },
-];
-
-// 返回用户公开信息（去除密码等敏感字段）
-function toPublic(user) {
-  if (!user) return null;
-  const { password, salt, ...pub } = user;
-  return pub;
+function toPublic(row) {
+  if (!row) return null;
+  const { password, salt, join_date, ...rest } = row;
+  return {
+    ...rest,
+    joinDate: join_date,
+    diseaseIds: getDiseaseIds(row.id),
+  };
 }
 
 export function getAllUsers({ page = 1, limit = 10, role } = {}) {
-  let filtered = [...users];
+  const db = getDb();
+
+  let where = '';
+  const params = [];
   if (role) {
-    filtered = filtered.filter((u) => u.role === role);
+    where = 'WHERE role = ?';
+    params.push(role);
   }
-  const total = filtered.length;
-  const start = (page - 1) * limit;
-  const items = filtered.slice(start, start + limit).map(toPublic);
+
+  const countRow = db.prepare(`SELECT COUNT(*) AS total FROM users ${where}`).get(...params);
+  const total = countRow.total;
+
+  const rows = db.prepare(
+    `SELECT id, username, email, role, join_date, bio FROM users ${where} ORDER BY id LIMIT ? OFFSET ?`
+  ).all(...params, limit, (page - 1) * limit);
+
+  const items = rows.map((r) => ({
+    ...r,
+    joinDate: r.join_date,
+    join_date: undefined,
+    diseaseIds: getDiseaseIds(r.id),
+  }));
+
   return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
 }
 
 export function getUserById(id) {
-  return toPublic(users.find((u) => u.id === id));
+  const db = getDb();
+  const row = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+  return toPublic(row);
 }
 
 export function getUserByUsername(username) {
-  return toPublic(users.find((u) => u.username === username));
+  const db = getDb();
+  const row = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+  return toPublic(row);
 }
 
 export function getUserByEmail(email) {
-  return users.find((u) => u.email === email) || null;
+  const db = getDb();
+  return db.prepare('SELECT * FROM users WHERE email = ?').get(email) || null;
 }
 
-// 验证用户密码，返回原始用户对象（含密码），用于登录
 export function authenticateUser(email, password) {
-  const user = users.find((u) => u.email === email);
+  const db = getDb();
+  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
   if (!user) return null;
   if (!verifyPassword(password, user.salt, user.password)) return null;
   return user;
 }
 
 export function createUser({ username, email, password, role = 'user', diseaseIds = [], bio = '' }) {
-  if (users.find((u) => u.email === email)) {
-    return { error: '邮箱已注册' };
-  }
-  if (users.find((u) => u.username === username)) {
-    return { error: '用户名已存在' };
-  }
+  const db = getDb();
+
+  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  if (existing) return { error: '邮箱已注册' };
+
+  const existingName = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+  if (existingName) return { error: '用户名已存在' };
+
   const pwd = createPasswordHash(password);
-  const user = {
-    id: nextUserId++,
-    username,
-    email,
-    password: pwd.hash,
-    salt: pwd.salt,
-    role,
-    diseaseIds,
-    joinDate: new Date().toISOString().split('T')[0],
-    bio,
-  };
-  users.push(user);
-  return toPublic(user);
+  const now = new Date().toISOString().split('T')[0];
+
+  const result = db.prepare(
+    'INSERT INTO users (username, email, password, salt, role, join_date, bio) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run(username, email, pwd.hash, pwd.salt, role, now, bio);
+
+  const userId = result.lastInsertRowid;
+  if (diseaseIds.length > 0) {
+    setDiseaseIds(userId, diseaseIds);
+  }
+
+  return getUserById(userId);
 }
 
 export function updateUser(id, updates) {
-  const user = users.find((u) => u.id === id);
+  const db = getDb();
+  const user = db.prepare('SELECT id FROM users WHERE id = ?').get(id);
   if (!user) return null;
-  const allowed = ['username', 'bio', 'diseaseIds'];
-  for (const key of allowed) {
-    if (updates[key] !== undefined) {
-      user[key] = updates[key];
-    }
+
+  if (updates.username !== undefined) {
+    db.prepare('UPDATE users SET username = ? WHERE id = ?').run(updates.username, id);
   }
-  return toPublic(user);
+  if (updates.bio !== undefined) {
+    db.prepare('UPDATE users SET bio = ? WHERE id = ?').run(updates.bio, id);
+  }
+  if (updates.diseaseIds !== undefined) {
+    setDiseaseIds(id, updates.diseaseIds);
+  }
+
+  return getUserById(id);
 }

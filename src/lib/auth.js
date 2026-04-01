@@ -1,8 +1,5 @@
 import crypto from 'crypto';
-
-// 简易 Token 存储（生产环境应使用 Redis/数据库）
-const tokens = new Map();
-const apiKeys = new Map();
+import { getDb } from '@/lib/db';
 
 const TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24小时
 
@@ -24,74 +21,79 @@ export function verifyPassword(password, salt, hash) {
   return hashPassword(password, salt) === hash;
 }
 
+// 清理过期 Token
+function cleanExpiredTokens() {
+  const db = getDb();
+  db.prepare('DELETE FROM tokens WHERE expires_at < ?').run(Date.now());
+}
+
 // 生成 Bearer Token
 export function generateToken(userId, role) {
+  const db = getDb();
+  cleanExpiredTokens();
   const token = crypto.randomBytes(32).toString('hex');
-  tokens.set(token, {
-    userId,
-    role,
-    createdAt: Date.now(),
-    expiresAt: Date.now() + TOKEN_EXPIRY,
-  });
+  const now = Date.now();
+  db.prepare(
+    'INSERT INTO tokens (token, user_id, role, created_at, expires_at) VALUES (?, ?, ?, ?, ?)'
+  ).run(token, userId, role, now, now + TOKEN_EXPIRY);
   return { token, expiresIn: TOKEN_EXPIRY / 1000 };
 }
 
 // 验证 Bearer Token
 export function verifyToken(token) {
-  const data = tokens.get(token);
-  if (!data) return null;
-  if (Date.now() > data.expiresAt) {
-    tokens.delete(token);
+  const db = getDb();
+  const row = db.prepare('SELECT user_id AS userId, role, expires_at AS expiresAt FROM tokens WHERE token = ?').get(token);
+  if (!row) return null;
+  if (Date.now() > row.expiresAt) {
+    db.prepare('DELETE FROM tokens WHERE token = ?').run(token);
     return null;
   }
-  return data;
+  return { userId: row.userId, role: row.role };
 }
 
 // 撤销 Token
 export function revokeToken(token) {
-  return tokens.delete(token);
+  const db = getDb();
+  const result = db.prepare('DELETE FROM tokens WHERE token = ?').run(token);
+  return result.changes > 0;
 }
 
-// 生成 API Key（给 agent 使用的长期密钥）
+// 生成 API Key
 export function generateApiKey(userId, name, role) {
+  const db = getDb();
   const key = `rdc_${crypto.randomBytes(24).toString('hex')}`;
-  apiKeys.set(key, {
-    userId,
-    name,
-    role,
-    createdAt: Date.now(),
-    active: true,
-  });
+  db.prepare(
+    'INSERT INTO api_keys (key, user_id, name, role, created_at, active) VALUES (?, ?, ?, ?, ?, 1)'
+  ).run(key, userId, name, role, Date.now());
   return key;
 }
 
 // 验证 API Key
 export function verifyApiKey(key) {
-  const data = apiKeys.get(key);
-  if (!data || !data.active) return null;
-  return data;
+  const db = getDb();
+  const row = db.prepare(
+    'SELECT user_id AS userId, name, role FROM api_keys WHERE key = ? AND active = 1'
+  ).get(key);
+  return row || null;
 }
 
 // 列出用户的 API Keys
 export function listApiKeys(userId) {
-  const keys = [];
-  for (const [key, data] of apiKeys.entries()) {
-    if (data.userId === userId) {
-      keys.push({
-        key: key.slice(0, 8) + '...' + key.slice(-4),
-        name: data.name,
-        createdAt: data.createdAt,
-        active: data.active,
-      });
-    }
-  }
-  return keys;
+  const db = getDb();
+  const rows = db.prepare(
+    'SELECT key, name, created_at AS createdAt, active FROM api_keys WHERE user_id = ? ORDER BY created_at DESC'
+  ).all(userId);
+  return rows.map((r) => ({
+    key: r.key.slice(0, 8) + '...' + r.key.slice(-4),
+    name: r.name,
+    createdAt: r.createdAt,
+    active: !!r.active,
+  }));
 }
 
 // 撤销 API Key
 export function revokeApiKey(key) {
-  const data = apiKeys.get(key);
-  if (!data) return false;
-  data.active = false;
-  return true;
+  const db = getDb();
+  const result = db.prepare('UPDATE api_keys SET active = 0 WHERE key = ?').run(key);
+  return result.changes > 0;
 }
