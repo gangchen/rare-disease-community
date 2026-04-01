@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
-import styles from './posts.module.css';
+import { MessageCircle, Eye, PenLine, TrendingUp } from 'lucide-react';
 
 const POSTS = [
   { id: 1, title: '确诊SMA后的治疗经历分享', author: '希望之光', disease: '脊髓性肌萎缩症', date: '2026-03-30', replies: 23, views: 456 },
@@ -13,41 +13,66 @@ const POSTS = [
   { id: 8, title: '如何面对确诊后的心理压力', author: '心理咨询师', disease: '综合', date: '2026-03-23', replies: 52, views: 980 },
 ];
 
-export const metadata = {
-  title: '社区讨论 - 罕见病社区',
-};
+export const metadata = { title: '社区讨论 - 罕见病社区' };
 
 export default function PostsPage() {
   return (
     <>
       <Navbar />
-      <main className={styles.main}>
-        <div className={styles.header}>
+      <main className="max-w-6xl mx-auto px-4 py-10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className={styles.title}>社区讨论</h1>
-            <p className={styles.subtitle}>分享经验，互相帮助</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">社区讨论</h1>
+            <p className="text-gray-500">分享经验，互相帮助，你的每一句话都可能温暖他人</p>
           </div>
-          <Link href="/posts/new" className={styles.newPost}>发布新帖</Link>
+          <Link
+            href="/posts/new"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl font-medium shadow-sm shadow-primary-200 hover:bg-primary-700 transition shrink-0"
+          >
+            <PenLine className="w-4 h-4" /> 发布新帖
+          </Link>
         </div>
 
-        <div className={styles.list}>
-          {POSTS.map((post) => (
+        {/* Hot tip */}
+        <div className="flex items-center gap-2 px-4 py-3 mb-6 rounded-xl bg-warm-50 border border-warm-200 text-sm text-warm-500">
+          <TrendingUp className="w-4 h-4 shrink-0" />
+          <span>本周最热：<strong className="text-gray-700">罕见病用药报销政策解读</strong> — 67 条回复</span>
+        </div>
+
+        <div className="space-y-3">
+          {POSTS.map((post, i) => (
             <Link
               href={`/posts/${post.id}`}
               key={post.id}
-              className={styles.postCard}
+              className="group flex items-center gap-4 p-5 bg-white rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-md transition-all"
             >
-              <div className={styles.postInfo}>
-                <h3>{post.title}</h3>
-                <div className={styles.meta}>
+              {/* Rank number for top 3 */}
+              <div className={`hidden sm:flex w-8 h-8 rounded-lg items-center justify-center text-sm font-bold shrink-0 ${
+                i < 3 ? 'bg-primary-50 text-primary-600' : 'bg-gray-50 text-gray-400'
+              }`}>
+                {i + 1}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-gray-900 group-hover:text-primary-700 transition-colors truncate">
+                  {post.title}
+                </h3>
+                <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-400">
                   <span>{post.author}</span>
-                  <span className={styles.tag}>{post.disease}</span>
+                  <span className="px-2 py-0.5 rounded-md bg-primary-50 text-primary-600 text-xs font-medium">
+                    {post.disease}
+                  </span>
                   <span>{post.date}</span>
                 </div>
               </div>
-              <div className={styles.postStats}>
-                <span>{post.replies} 回复</span>
-                <span>{post.views} 浏览</span>
+
+              <div className="hidden sm:flex items-center gap-4 text-sm text-gray-400 shrink-0">
+                <span className="flex items-center gap-1">
+                  <MessageCircle className="w-4 h-4" /> {post.replies}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Eye className="w-4 h-4" /> {post.views}
+                </span>
               </div>
             </Link>
           ))}
