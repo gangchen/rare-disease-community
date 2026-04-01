@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getPostById, addComment } from '@/data/posts';
+import { authenticate, authError } from '@/lib/middleware';
 
-// GET /api/posts/:id/comments
+// GET /api/posts/:id/comments - 公开接口
 export async function GET(request, { params }) {
   const id = parseInt(params.id);
   const post = getPostById(id);
@@ -13,21 +14,29 @@ export async function GET(request, { params }) {
   return NextResponse.json({ items: post.comments, total: post.comments.length });
 }
 
-// POST /api/posts/:id/comments
-// Body: { author, authorId, content }
+// POST /api/posts/:id/comments - 需要认证
+// Header: Authorization: Bearer <token> 或 ApiKey <key>
+// Body: { content }
 export async function POST(request, { params }) {
+  const auth = authenticate(request);
+  if (auth.error) return authError(auth);
+
   const id = parseInt(params.id);
   const body = await request.json();
-  const { author, authorId, content } = body;
+  const { content } = body;
 
-  if (!author || !authorId || !content) {
+  if (!content) {
     return NextResponse.json(
-      { error: '缺少必填字段: author, authorId, content' },
+      { error: '缺少必填字段: content' },
       { status: 400 }
     );
   }
 
-  const comment = addComment(id, { author, authorId, content });
+  const comment = addComment(id, {
+    author: body.author || `user_${auth.userId}`,
+    authorId: auth.userId,
+    content,
+  });
 
   if (!comment) {
     return NextResponse.json({ error: '帖子不存在' }, { status: 404 });

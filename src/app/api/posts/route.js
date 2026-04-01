@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getAllPosts, createPost, searchPosts } from '@/data/posts';
+import { authenticate, authError } from '@/lib/middleware';
 
-// GET /api/posts
+// GET /api/posts - 公开接口
 // 查询参数: ?page=1&limit=10&diseaseId=2&sort=date|views|replies&search=关键词
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -21,19 +22,27 @@ export async function GET(request) {
   return NextResponse.json(result);
 }
 
-// POST /api/posts
-// Body: { title, content, author, authorId, diseaseId?, disease? }
+// POST /api/posts - 需要认证
+// Header: Authorization: Bearer <token> 或 ApiKey <key>
+// Body: { title, content, diseaseId?, disease? }
 export async function POST(request) {
-  const body = await request.json();
-  const { title, content, author, authorId } = body;
+  const auth = authenticate(request);
+  if (auth.error) return authError(auth);
 
-  if (!title || !content || !author || !authorId) {
+  const body = await request.json();
+  const { title, content } = body;
+
+  if (!title || !content) {
     return NextResponse.json(
-      { error: '缺少必填字段: title, content, author, authorId' },
+      { error: '缺少必填字段: title, content' },
       { status: 400 }
     );
   }
 
-  const post = createPost(body);
+  const post = createPost({
+    ...body,
+    authorId: auth.userId,
+    author: body.author || `user_${auth.userId}`,
+  });
   return NextResponse.json(post, { status: 201 });
 }
