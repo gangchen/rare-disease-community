@@ -79,6 +79,41 @@ if (!existingTables.includes('news')) {
   migrated++;
 }
 
+// --- tokens 表 ---
+if (!existingTables.includes('tokens')) {
+  db.exec(`
+    CREATE TABLE tokens (
+      token TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      role TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      expires_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX idx_tokens_expires ON tokens(expires_at);
+  `);
+  console.log('✓ 创建 tokens 表');
+  migrated++;
+}
+
+// --- api_keys 表 ---
+if (!existingTables.includes('api_keys')) {
+  db.exec(`
+    CREATE TABLE api_keys (
+      key TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      role TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      active INTEGER DEFAULT 1,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX idx_api_keys_user ON api_keys(user_id);
+  `);
+  console.log('✓ 创建 api_keys 表');
+  migrated++;
+}
+
 // --- 未来的迁移在这里追加 ---
 // if (!existingTables.includes('xxx')) { ... }
 
