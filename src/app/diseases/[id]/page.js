@@ -30,9 +30,9 @@ export default function DiseaseDetailPage() {
         <Navbar />
         <main className="max-w-4xl mx-auto px-4 py-10">
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 rounded w-1/2" />
-            <div className="h-4 bg-gray-200 rounded w-1/3" />
-            <div className="h-32 bg-gray-200 rounded" />
+            <div className="h-8 bg-surface-700 rounded w-1/2" />
+            <div className="h-4 bg-surface-700 rounded w-1/3" />
+            <div className="h-32 bg-surface-700 rounded" />
           </div>
         </main>
       </>
@@ -44,8 +44,8 @@ export default function DiseaseDetailPage() {
       <>
         <Navbar />
         <main className="max-w-4xl mx-auto px-4 py-20 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">病种不存在</h1>
-          <Link href="/diseases" className="text-primary-600 font-medium">返回病种列表</Link>
+          <h1 className="text-2xl font-bold text-white mb-3">病种不存在</h1>
+          <Link href="/diseases" className="text-primary-400 hover:text-primary-300 font-medium">返回病种列表</Link>
         </main>
       </>
     );
@@ -55,46 +55,46 @@ export default function DiseaseDetailPage() {
     <>
       <Navbar />
       <main className="max-w-4xl mx-auto px-4 py-10">
-        <Link href="/diseases" className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-primary-600 mb-6">
+        <Link href="/diseases" className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-primary-300 mb-6">
           <ArrowLeft className="w-4 h-4" /> 返回病种列表
         </Link>
 
         {/* Disease Info Card */}
-        <div className="bg-gradient-to-br from-primary-50 to-rare-50 rounded-2xl border border-primary-100 p-6 md:p-8 mb-10">
-          <span className="inline-block px-3 py-1 rounded-full bg-white text-primary-600 text-xs font-medium mb-3">
+        <div className="bg-surface-800 rounded-2xl border border-surface-600 p-6 md:p-8 mb-10">
+          <span className="inline-block px-3 py-1 rounded-full bg-primary-400/20 text-primary-400 text-xs font-medium mb-3">
             {disease.category}
           </span>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">{disease.name}</h1>
-          <p className="text-gray-600 leading-relaxed mb-5">{disease.description}</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-3">{disease.name}</h1>
+          <p className="text-gray-300 leading-relaxed mb-5">{disease.description}</p>
           <div className="flex gap-6">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Users className="w-4 h-4 text-primary-500" />
-              <span><strong className="text-gray-900">{disease.members}</strong> 位成员</span>
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <Users className="w-4 h-4 text-primary-400" />
+              <span><strong className="text-white">{disease.members}</strong> 位成员</span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <BookOpen className="w-4 h-4 text-primary-500" />
-              <span><strong className="text-gray-900">{disease.posts}</strong> 篇帖子</span>
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <BookOpen className="w-4 h-4 text-primary-400" />
+              <span><strong className="text-white">{disease.posts}</strong> 篇帖子</span>
             </div>
           </div>
         </div>
 
         {/* Posts for this disease */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">相关讨论</h2>
+          <h2 className="text-xl font-bold text-white">相关讨论</h2>
           <Link
             href="/posts/new"
-            className="text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1"
+            className="text-sm font-medium text-primary-400 hover:text-primary-300 flex items-center gap-1"
           >
             发帖讨论 <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
         {posts.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
+          <div className="text-center py-16 bg-surface-800 rounded-2xl border border-surface-600">
             <p className="text-gray-400 mb-4">该病种暂无讨论帖子</p>
             <Link
               href="/posts/new"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-medium hover:bg-primary-700 transition"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-400 text-black rounded-xl text-sm font-medium hover:bg-primary-300 transition"
             >
               发布第一篇帖子
             </Link>
@@ -105,10 +105,10 @@ export default function DiseaseDetailPage() {
               <Link
                 href={`/posts/${post.id}`}
                 key={post.id}
-                className="group flex items-center justify-between p-5 bg-white rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-md transition-all"
+                className="group flex items-center justify-between p-5 bg-surface-800 rounded-2xl border border-surface-600 hover:border-primary-400/40 hover:shadow-md transition-all"
               >
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-gray-900 group-hover:text-primary-700 transition-colors truncate">
+                  <h3 className="font-semibold text-white group-hover:text-primary-400 transition-colors truncate">
                     {post.title}
                   </h3>
                   <div className="flex items-center gap-3 mt-2 text-sm text-gray-400">

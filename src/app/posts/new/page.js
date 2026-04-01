@@ -71,41 +71,41 @@ export default function NewPostPage() {
     <>
       <Navbar />
       <main className="max-w-3xl mx-auto px-4 py-10">
-        <Link href="/posts" className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-primary-600 mb-6">
+        <Link href="/posts" className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-primary-300 mb-6">
           <ArrowLeft className="w-4 h-4" /> 返回讨论列表
         </Link>
 
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
-            <PenLine className="w-5 h-5 text-primary-600" />
+          <div className="w-10 h-10 rounded-xl bg-primary-400/20 flex items-center justify-center">
+            <PenLine className="w-5 h-5 text-primary-400" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">发布新帖</h1>
+          <h1 className="text-2xl font-bold text-white">发布新帖</h1>
         </div>
 
         {error && (
-          <div className="mb-6 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-600">
+          <div className="mb-6 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-400">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">标题</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">标题</label>
             <input
               type="text"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="输入帖子标题..."
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none transition text-gray-900"
+              className="w-full px-4 py-3 rounded-xl bg-surface-700 border border-surface-600 text-white placeholder-gray-500 focus:border-primary-400 focus:ring-1 focus:ring-primary-400/20 outline-none transition"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">相关病种</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">相关病种</label>
             <select
               value={form.disease}
               onChange={(e) => setForm({ ...form, disease: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none transition text-gray-900 bg-white"
+              className="w-full px-4 py-3 rounded-xl bg-surface-700 border border-surface-600 text-white focus:border-primary-400 focus:ring-1 focus:ring-primary-400/20 outline-none transition"
             >
               <option value="">选择病种（可选）</option>
               {diseases.map((d) => (
@@ -115,13 +115,13 @@ export default function NewPostPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">内容</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">内容</label>
             <textarea
               value={form.content}
               onChange={(e) => setForm({ ...form, content: e.target.value })}
               placeholder="分享你的经验、问题或想法..."
               rows={10}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none transition text-gray-900 resize-y"
+              className="w-full px-4 py-3 rounded-xl bg-surface-700 border border-surface-600 text-white placeholder-gray-500 focus:border-primary-400 focus:ring-1 focus:ring-primary-400/20 outline-none transition resize-y"
             />
           </div>
 
@@ -129,14 +129,14 @@ export default function NewPostPage() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-xl font-medium shadow-sm hover:bg-primary-700 transition disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-primary-400 text-black rounded-xl font-medium shadow-sm hover:bg-primary-300 transition disabled:opacity-50"
             >
               <Send className="w-4 h-4" />
               {loading ? '发布中...' : '发布帖子'}
             </button>
             <Link
               href="/posts"
-              className="inline-flex items-center px-6 py-3 text-gray-500 rounded-xl font-medium border border-gray-200 hover:bg-gray-50 transition"
+              className="inline-flex items-center px-6 py-3 text-gray-400 rounded-xl font-medium bg-surface-700 border border-surface-600 hover:bg-surface-600 transition"
             >
               取消
             </Link>

@@ -1,82 +1,207 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
-import { MessageCircle, Eye, PenLine, TrendingUp } from 'lucide-react';
+import { Search, Heart, MessageCircle, PenLine, TrendingUp, Users } from 'lucide-react';
+import { timeAgo } from '@/lib/timeAgo';
 
-const POSTS = [
-  { id: 1, title: '确诊SMA后的治疗经历分享', author: '希望之光', disease: '脊髓性肌萎缩症', date: '2026-03-30', replies: 23, views: 456 },
-  { id: 2, title: '渐冻症患者家属互助指南', author: '守护者', disease: '渐冻症', date: '2026-03-29', replies: 45, views: 892 },
-  { id: 3, title: 'PKU饮食管理经验总结', author: '营养师小王', disease: '苯丙酮尿症', date: '2026-03-28', replies: 18, views: 324 },
-  { id: 4, title: '戈谢病最新药物临床试验信息', author: '医学前沿', disease: '戈谢病', date: '2026-03-27', replies: 31, views: 567 },
-  { id: 5, title: '血友病患者运动注意事项', author: '运动达人', disease: '血友病', date: '2026-03-26', replies: 15, views: 278 },
-  { id: 6, title: '罕见病用药报销政策解读', author: '政策观察', disease: '综合', date: '2026-03-25', replies: 67, views: 1230 },
-  { id: 7, title: '瓷娃娃康复训练分享', author: '坚强妈妈', disease: '成骨不全症', date: '2026-03-24', replies: 28, views: 445 },
-  { id: 8, title: '如何面对确诊后的心理压力', author: '心理咨询师', disease: '综合', date: '2026-03-23', replies: 52, views: 980 },
-];
-
-export const metadata = { title: '社区讨论 - 罕见病社区' };
+const TABS = ['全部', '话题', '经验', '问答'];
 
 export default function PostsPage() {
+  const [posts, setPosts] = useState([]);
+  const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState('全部');
+  const [loading, setLoading] = useState(true);
+  const [topPosts, setTopPosts] = useState([]);
+  const [recentUsers, setRecentUsers] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/posts?limit=12')
+      .then((r) => r.json())
+      .then((data) => {
+        setPosts(data.items || []);
+        const sorted = [...(data.items || [])].sort((a, b) => b.views - a.views);
+        setTopPosts(sorted.slice(0, 5));
+      })
+      .finally(() => setLoading(false));
+
+    fetch('/api/users')
+      .then((r) => {
+        if (r.ok) return r.json();
+        return [];
+      })
+      .then((data) => setRecentUsers(Array.isArray(data) ? data.slice(0, 8) : (data.items || []).slice(0, 8)));
+  }, []);
+
+  useEffect(() => {
+    if (!search.trim()) return;
+    const timer = setTimeout(() => {
+      fetch(`/api/posts?search=${encodeURIComponent(search)}&limit=20`)
+        .then((r) => r.json())
+        .then((data) => setPosts(data.items || []));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const avatarColors = [
+    'bg-primary-400/20 text-primary-400',
+    'bg-sky-400/20 text-sky-400',
+    'bg-rare-400/20 text-rare-400',
+    'bg-rose-400/20 text-rose-400',
+    'bg-emerald-400/20 text-emerald-400',
+  ];
+
   return (
     <>
       <Navbar />
-      <main className="max-w-6xl mx-auto px-4 py-10">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">社区讨论</h1>
-            <p className="text-gray-500">分享经验，互相帮助，你的每一句话都可能温暖他人</p>
+      <main>
+        {/* Hero */}
+        <section className="text-center py-16 px-4">
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-3">社区</h1>
+          <p className="text-gray-400 mb-8">Share your story. Support each other.</p>
+
+          {/* Search */}
+          <div className="max-w-xl mx-auto relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+            <input
+              type="text"
+              placeholder="搜索话题、疾病..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-12 pr-4 py-3.5 bg-surface-800 border border-surface-600 rounded-xl text-white placeholder-gray-500 focus:border-primary-400 focus:ring-1 focus:ring-primary-400/20 outline-none transition"
+            />
           </div>
-          <Link
-            href="/posts/new"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl font-medium shadow-sm shadow-primary-200 hover:bg-primary-700 transition shrink-0"
-          >
-            <PenLine className="w-4 h-4" /> 发布新帖
-          </Link>
-        </div>
 
-        {/* Hot tip */}
-        <div className="flex items-center gap-2 px-4 py-3 mb-6 rounded-xl bg-warm-50 border border-warm-200 text-sm text-warm-500">
-          <TrendingUp className="w-4 h-4 shrink-0" />
-          <span>本周最热：<strong className="text-gray-700">罕见病用药报销政策解读</strong> — 67 条回复</span>
-        </div>
+          {/* Tabs */}
+          <div className="flex items-center justify-center gap-2 mt-8">
+            {TABS.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
+                  activeTab === tab
+                    ? 'bg-primary-400 text-black'
+                    : 'bg-surface-800 text-gray-400 hover:text-white'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </section>
 
-        <div className="space-y-3">
-          {POSTS.map((post, i) => (
-            <Link
-              href={`/posts/${post.id}`}
-              key={post.id}
-              className="group flex items-center gap-4 p-5 bg-white rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-md transition-all"
-            >
-              {/* Rank number for top 3 */}
-              <div className={`hidden sm:flex w-8 h-8 rounded-lg items-center justify-center text-sm font-bold shrink-0 ${
-                i < 3 ? 'bg-primary-50 text-primary-600' : 'bg-gray-50 text-gray-400'
-              }`}>
-                {i + 1}
+        {/* Content */}
+        <section className="max-w-6xl mx-auto px-4 pb-20">
+          <div className="flex gap-8">
+            {/* Posts Grid */}
+            <div className="flex-1">
+              {/* New Post Button */}
+              <div className="flex justify-end mb-6">
+                <Link
+                  href="/posts/new"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-400 text-black rounded-xl text-sm font-semibold hover:bg-primary-300 transition-colors"
+                >
+                  <PenLine className="w-4 h-4" />
+                  发帖
+                </Link>
               </div>
 
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-900 group-hover:text-primary-700 transition-colors truncate">
-                  {post.title}
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="bg-surface-800 border border-surface-600 rounded-xl p-5 animate-pulse">
+                      <div className="h-4 bg-surface-600 rounded w-3/4 mb-3" />
+                      <div className="h-3 bg-surface-600 rounded w-full mb-2" />
+                      <div className="h-3 bg-surface-600 rounded w-2/3" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {posts.map((post, idx) => (
+                    <Link
+                      key={post.id}
+                      href={`/posts/${post.id}`}
+                      className="bg-surface-800 border border-surface-600 rounded-xl p-5 hover:border-primary-400/50 transition-all group"
+                    >
+                      {/* Author row */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${avatarColors[idx % avatarColors.length]}`}>
+                          {post.author?.[0] || '?'}
+                        </div>
+                        <span className="text-sm text-gray-400">{post.author}</span>
+                        {post.disease && post.disease !== '综合' && (
+                          <span className="ml-auto text-xs px-2 py-0.5 bg-primary-400/10 text-primary-400 rounded-full">{post.disease}</span>
+                        )}
+                      </div>
+
+                      {/* Title */}
+                      <h3 className="text-white font-semibold mb-2 line-clamp-2 group-hover:text-primary-400 transition-colors">{post.title}</h3>
+
+                      {/* Excerpt */}
+                      <p className="text-gray-500 text-sm line-clamp-2 mb-4">{post.content}</p>
+
+                      {/* Meta */}
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Heart className="w-3.5 h-3.5" />
+                          {post.likes || 0}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          {post.replies || 0}
+                        </span>
+                        <span className="ml-auto">{timeAgo(post.date)}</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {!loading && posts.length === 0 && (
+                <div className="text-center py-20 text-gray-500">暂无帖子</div>
+              )}
+            </div>
+
+            {/* Sidebar */}
+            <aside className="hidden lg:block w-72 shrink-0 space-y-6">
+              {/* Trending Topics */}
+              <div className="bg-surface-800 border border-surface-600 rounded-xl p-5">
+                <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-primary-400" />
+                  热门话题
                 </h3>
-                <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-400">
-                  <span>{post.author}</span>
-                  <span className="px-2 py-0.5 rounded-md bg-primary-50 text-primary-600 text-xs font-medium">
-                    {post.disease}
-                  </span>
-                  <span>{post.date}</span>
+                <div className="space-y-3">
+                  {topPosts.map((p) => (
+                    <Link key={p.id} href={`/posts/${p.id}`} className="block text-sm text-gray-400 hover:text-white transition-colors line-clamp-1">
+                      {p.title}
+                    </Link>
+                  ))}
                 </div>
               </div>
 
-              <div className="hidden sm:flex items-center gap-4 text-sm text-gray-400 shrink-0">
-                <span className="flex items-center gap-1">
-                  <MessageCircle className="w-4 h-4" /> {post.replies}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Eye className="w-4 h-4" /> {post.views}
-                </span>
+              {/* Recent Members */}
+              <div className="bg-surface-800 border border-surface-600 rounded-xl p-5">
+                <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+                  <Users className="w-4 h-4 text-primary-400" />
+                  最近加入
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {recentUsers.map((u, i) => (
+                    <div
+                      key={u.id || i}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${avatarColors[i % avatarColors.length]}`}
+                      title={u.username}
+                    >
+                      {u.username?.[0] || '?'}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </Link>
-          ))}
-        </div>
+            </aside>
+          </div>
+        </section>
       </main>
     </>
   );

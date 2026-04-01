@@ -74,6 +74,28 @@ db.exec(`
     FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
   );
 
+  CREATE TABLE likes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    UNIQUE(post_id, user_id),
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE news (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    summary TEXT DEFAULT '',
+    content TEXT NOT NULL,
+    category TEXT NOT NULL,
+    image_url TEXT DEFAULT '',
+    author_id INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
   CREATE TABLE tokens (
     token TEXT PRIMARY KEY,
     user_id INTEGER NOT NULL,
@@ -97,6 +119,9 @@ db.exec(`
   CREATE INDEX idx_posts_author ON posts(author_id);
   CREATE INDEX idx_posts_created ON posts(created_at DESC);
   CREATE INDEX idx_comments_post ON comments(post_id);
+  CREATE INDEX idx_likes_post ON likes(post_id);
+  CREATE INDEX idx_news_created ON news(created_at DESC);
+  CREATE INDEX idx_news_category ON news(category);
   CREATE INDEX idx_tokens_expires ON tokens(expires_at);
   CREATE INDEX idx_api_keys_user ON api_keys(user_id);
 `);
@@ -207,6 +232,46 @@ for (const c of commentsData) {
   insertComment.run(...c);
 }
 console.log(`插入 ${commentsData.length} 条评论数据`);
+
+// 点赞数据
+const likesData = [
+  [1, 2], [1, 3], [1, 4], [1, 6], [1, 8],
+  [2, 1], [2, 3], [2, 5], [2, 7], [2, 8], [2, 9],
+  [3, 1], [3, 6],
+  [4, 1], [4, 2], [4, 5],
+  [5, 1], [5, 2],
+  [6, 1], [6, 2], [6, 3], [6, 4], [6, 5], [6, 8], [6, 9],
+  [7, 1], [7, 3], [7, 9],
+  [8, 1], [8, 2], [8, 3], [8, 5], [8, 6], [8, 7], [8, 8],
+];
+
+const insertLike = db.prepare(
+  'INSERT INTO likes (post_id, user_id, created_at) VALUES (?, ?, ?)'
+);
+for (const [postId, userId] of likesData) {
+  insertLike.run(postId, userId, '2026-03-30');
+}
+console.log(`插入 ${likesData.length} 条点赞数据`);
+
+// 新闻数据
+const newsData = [
+  ['ALS基因疗法进入临床试验', '一项针对渐冻症(ALS)的新型基因疗法已获批进入III期临床试验，有望为患者带来新的治疗选择。', '近日，某知名制药公司宣布，其针对SOD1突变型ALS的反义寡核苷酸(ASO)疗法已成功完成II期临床试验，显示出显著的疾效果。该疗法通过靶向SOD1 mRNA，减少有毒蛋白质的产生，从而延缓疾病进展。III期试验预计将在全球多个中心招募500名患者参与。', 'research', '', 4, '2026-03-28'],
+  ['孤儿药加速审批新政策实施', '国家药监局发布新政，罕见病用药审批周期将缩短至6个月，多项措施助力孤儿药研发。', '为进一步加速罕见病用药可及性，国家药品监督管理局近日正式实施《罕见病药物优先审评审批工作程序》，明确罕见病用药可享受优先审评审批通道，审批周期从原来的12-18个月缩短至6个月。同时还出台了临床试验数据豁免、境外数据接受等配套政策。', 'policy', '', 7, '2026-03-26'],
+  ['法布里病酶替代疗法长期数据公布', '一项跟踪10年的研究显示，法布里病酶替代疗法可显著改善患者心脏和肾脏功能。', '发表在《新英格兰医学杂志》的一项为期10年的前瞻性队列研究，纳入了来自全球15个中心的320名法布里病患者。研究结果表明，持续接受酶替代疗法的患者，其左心室质量指数年均下降2.3%，eGFR稳定率达到78%。', 'research', '', 4, '2026-03-24'],
+  ['罕见病心理支持指南发布', '中国罕见病联盟联合多家机构发布首部《罕见病患者心理健康支持指南》。', '该指南由中国罕见病联盟牵头，联合北京大学第一医院、协和医院等10余家机构的心理学专家共同编写。指南涵盖了确诊期心理危机干预、长期治疗中的心理调适、照护者心理支持等六个板块。', 'patient_story', '', 9, '2026-03-22'],
+  ['SMA基因治疗药物纳入医保目录', '诺西那生钠注射液正式纳入国家医保目录，患者自付费用大幅降低。', '经过多轮谈判，SMA基因治疗药物诺西那生钠注射液已正式纳入2026年国家医保药品目录。此前每针约70万元的费用，在纳入医保后患者自付比例降至约3万元/针。这一政策惠及全国约3万名SMA患者。', 'policy', '', 7, '2026-03-20'],
+  ['戈谢病新型口服药物获批上市', '全球首个口服底物减少疗法药物获批上市，为戈谢病I型患者提供便捷治疗选择。', '某国际制药公司宣布，其开发的新型口服底物减少疗法(SRT)药物已在中国获批上市，用于治疗戈谢病I型成人患者。相比传统的静脉注射酶替代疗法，口服给药大幅提高了患者的依从性和生活质量。', 'drug_approval', '', 4, '2026-03-18'],
+  ['罕见病患者互助社区助力千名家庭', '线上互助社区成立一年，已帮助超过1000个罕见病家庭建立联系和获取信息支持。', '自平台成立以来，已有来自全国各地超过1000个罕见病家庭通过平台建立了联系。社区覆盖50余种罕见病，活跃志愿者超200人，举办线上分享会30余场。多位患者表示，社区的支持让他们不再感到孤单。', 'patient_story', '', 7, '2026-03-15'],
+  ['血友病预防性治疗新进展', '长效凝血因子产品研发取得突破，有望将血友病患者的注射频率降至每月一次。', '最新发表的临床研究数据显示，一种基于Fc融合技术的长效FIX凝血因子产品，在血友病B型患者中实现了每月一次的预防性给药方案。该方案不仅降低了年出血率，还显著提高了患者的治疗依从性。', 'research', '', 4, '2026-03-12'],
+];
+
+const insertNews = db.prepare(
+  'INSERT INTO news (title, summary, content, category, image_url, author_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+);
+for (const n of newsData) {
+  insertNews.run(...n);
+}
+console.log(`插入 ${newsData.length} 条新闻数据`);
 
 db.close();
 console.log('\n数据库初始化完成！文件位置:', DB_PATH);

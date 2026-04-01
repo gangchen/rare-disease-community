@@ -1,52 +1,45 @@
 @import "tailwindcss";
 
 /*
-  罕见病社区主题色彩体系
-  - 主色 teal: 代表健康、信任、治愈
-  - 暖色 amber: 代表希望、温暖
-  - 紫色 violet: 代表罕见、独特（国际罕见病日的标志色）
-  - 整体风格：温暖、有希望感、不冷冰冰
+  罕见病联盟主题色彩体系 - 深色风格
+  - 主色 amber/orange: 代表希望、温暖
+  - 深色背景: 沉稳、专业、减少视觉疲劳
+  - surface 层级: 用于区分卡片/输入框/背景
 */
 
 @theme {
-  --color-primary-50: #f0fdfa;
-  --color-primary-100: #ccfbf1;
-  --color-primary-200: #99f6e4;
-  --color-primary-300: #5eead4;
-  --color-primary-400: #2dd4bf;
-  --color-primary-500: #14b8a6;
-  --color-primary-600: #0d9488;
-  --color-primary-700: #0f766e;
-  --color-primary-800: #115e59;
-  --color-primary-900: #134e4a;
+  --color-primary-50: #FFF8EB;
+  --color-primary-100: #FEECC8;
+  --color-primary-200: #FDD889;
+  --color-primary-300: #FCBF3A;
+  --color-primary-400: #E8A038;
+  --color-primary-500: #D4891E;
+  --color-primary-600: #B8710F;
+  --color-primary-700: #8B5509;
+  --color-primary-800: #6B4107;
+  --color-primary-900: #4A2D05;
 
-  --color-warm-50: #fffbeb;
-  --color-warm-100: #fef3c7;
-  --color-warm-200: #fde68a;
-  --color-warm-300: #fcd34d;
-  --color-warm-400: #fbbf24;
-  --color-warm-500: #f59e0b;
+  --color-surface-900: #0A0A0B;
+  --color-surface-800: #111113;
+  --color-surface-700: #1A1A1D;
+  --color-surface-600: #252528;
+  --color-surface-500: #333338;
+  --color-surface-400: #444449;
 
-  --color-rare-50: #f5f3ff;
-  --color-rare-100: #ede9fe;
-  --color-rare-200: #ddd6fe;
   --color-rare-400: #a78bfa;
   --color-rare-500: #8b5cf6;
   --color-rare-600: #7c3aed;
 
-  --color-rose-50: #fff1f2;
-  --color-rose-100: #ffe4e6;
   --color-rose-400: #fb7185;
   --color-rose-500: #f43f5e;
 
-  --color-sky-50: #f0f9ff;
-  --color-sky-100: #e0f2fe;
   --color-sky-400: #38bdf8;
   --color-sky-500: #0ea5e9;
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
-  background: linear-gradient(180deg, #f0fdfa 0%, #f8fafc 300px);
+  background: var(--color-surface-900);
   min-height: 100vh;
+  color: #E5E5E7;
 }

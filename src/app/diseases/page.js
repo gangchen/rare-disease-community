@@ -3,10 +3,10 @@ import Navbar from '@/components/Navbar';
 import { Brain, Activity, Droplets, Bone, Users, BookOpen, ArrowRight } from 'lucide-react';
 
 const CATEGORY_META = {
-  '神经系统疾病': { icon: Brain, color: 'text-rare-500', bg: 'bg-rare-50', border: 'border-rare-200', badge: 'bg-rare-100 text-rare-600' },
-  '代谢性疾病': { icon: Activity, color: 'text-warm-500', bg: 'bg-warm-50', border: 'border-warm-200', badge: 'bg-warm-100 text-warm-500' },
-  '血液系统疾病': { icon: Droplets, color: 'text-rose-500', bg: 'bg-rose-50', border: 'border-rose-100', badge: 'bg-rose-100 text-rose-500' },
-  '其他': { icon: Bone, color: 'text-sky-500', bg: 'bg-sky-50', border: 'border-sky-100', badge: 'bg-sky-100 text-sky-500' },
+  '神经系统疾病': { icon: Brain, color: 'text-rare-400', bg: 'bg-rare-400/20', border: 'border-rare-400/20', badge: 'bg-rare-400/20 text-rare-400' },
+  '代谢性疾病': { icon: Activity, color: 'text-warm-400', bg: 'bg-warm-400/20', border: 'border-warm-400/20', badge: 'bg-warm-400/20 text-warm-400' },
+  '血液系统疾病': { icon: Droplets, color: 'text-rose-400', bg: 'bg-rose-400/20', border: 'border-rose-400/20', badge: 'bg-rose-400/20 text-rose-400' },
+  '其他': { icon: Bone, color: 'text-sky-400', bg: 'bg-sky-400/20', border: 'border-sky-400/20', badge: 'bg-sky-400/20 text-sky-400' },
 };
 
 const DISEASE_CATEGORIES = [
@@ -53,8 +53,8 @@ export default function DiseasesPage() {
     <>
       <Navbar />
       <main className="max-w-6xl mx-auto px-4 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">病种分类</h1>
-        <p className="text-gray-500 mb-10">选择你关注的病种，加入对应的讨论社区</p>
+        <h1 className="text-3xl font-bold text-white mb-2">病种分类</h1>
+        <p className="text-gray-400 mb-10">选择你关注的病种，加入对应的讨论社区</p>
 
         <div className="space-y-10">
           {DISEASE_CATEGORIES.map((cat) => {
@@ -66,7 +66,7 @@ export default function DiseasesPage() {
                   <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${meta.bg}`}>
                     <Icon className={`w-5 h-5 ${meta.color}`} />
                   </div>
-                  <h2 className="text-xl font-bold text-gray-900">{cat.category}</h2>
+                  <h2 className="text-xl font-bold text-white">{cat.category}</h2>
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${meta.badge}`}>
                     {cat.diseases.length} 种
                   </span>
@@ -76,12 +76,12 @@ export default function DiseasesPage() {
                     <Link
                       href={`/diseases/${d.id}`}
                       key={d.id}
-                      className={`group p-5 rounded-2xl border ${meta.border} ${meta.bg} hover:shadow-md transition-all`}
+                      className={`group p-5 rounded-2xl bg-surface-800 border border-surface-600 hover:border-primary-400/40 hover:shadow-md transition-all`}
                     >
-                      <h3 className="font-semibold text-gray-900 group-hover:text-primary-700 transition-colors mb-3 truncate">
+                      <h3 className="font-semibold text-white group-hover:text-primary-400 transition-colors mb-3 truncate">
                         {d.name}
                       </h3>
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <div className="flex items-center gap-4 text-sm text-gray-400">
                         <span className="flex items-center gap-1">
                           <Users className="w-3.5 h-3.5" /> {d.members}
                         </span>

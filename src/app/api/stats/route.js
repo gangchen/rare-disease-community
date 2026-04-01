@@ -10,6 +10,7 @@ export async function GET() {
   const diseaseCount = db.prepare('SELECT COUNT(*) AS c FROM diseases').get().c;
   const categoryCount = db.prepare('SELECT COUNT(DISTINCT category) AS c FROM diseases').get().c;
   const postCount = db.prepare('SELECT COUNT(*) AS c FROM posts').get().c;
+  const newsCount = db.prepare('SELECT COUNT(*) AS c FROM news').get().c;
   const totalMembers = db.prepare('SELECT COALESCE(SUM(members), 0) AS c FROM diseases').get().c;
   const totalPostViews = db.prepare('SELECT COALESCE(SUM(views), 0) AS c FROM posts').get().c;
 
@@ -27,6 +28,7 @@ export async function GET() {
     diseases: diseaseCount,
     categories: categoryCount,
     posts: postCount,
+    news: newsCount,
     totalMembers,
     totalPostViews,
     topDiseases,
