@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: '/diseases', label: '病种分类' },
   { href: '/posts', label: '社区讨论' },
   { href: '/about', label: '关于我们' },
+  { href: '/api-docs', label: 'API 文档' },
 ];
 
 export default function Navbar() {
