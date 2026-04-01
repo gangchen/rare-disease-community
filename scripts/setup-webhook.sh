@@ -4,8 +4,9 @@ set -e
 # ============================================
 # 罕见病社区 - GitHub Webhook 自动部署安装脚本
 #
-# 功能：当 deploy 分支收到 push 时，自动拉取代码并部署
-# 用法：sudo bash scripts/setup-webhook.sh
+# 功能：当指定分支收到 push 时，自动拉取代码并部署
+# 用法：sudo bash scripts/setup-webhook.sh [分支名]
+#   分支名支持精确匹配和前缀匹配（如 claude/ 匹配所有 claude/* 分支）
 #
 # 原理：
 #   GitHub push → Nginx(:80/hooks/) → webhook(:9000) → update.sh
@@ -29,7 +30,7 @@ fi
 APP_USER="app"
 APP_DIR="/home/$APP_USER/rare-disease-community"
 WEBHOOK_CONF="/home/$APP_USER/webhook.json"
-DEPLOY_BRANCH="${1:-deploy}"
+DEPLOY_BRANCH="${1:-claude/}"
 NGINX_CONF="/etc/nginx/sites-available/rare-disease-community"
 
 echo ""
@@ -78,8 +79,8 @@ cat > "$WEBHOOK_CONF" << HOOKJSON
         },
         {
           "match": {
-            "type": "value",
-            "value": "refs/heads/$DEPLOY_BRANCH",
+            "type": "regex",
+            "regex": "^refs/heads/$DEPLOY_BRANCH",
             "parameter": {
               "source": "payload",
               "name": "ref"
@@ -157,16 +158,11 @@ fi
 nginx -t && systemctl reload nginx
 info "Nginx 已更新并重载"
 
-# ---------- 7. 创建 deploy 分支（如果不存在） ----------
-info "检查 deploy 分支..."
+# ---------- 7. 检测当前分支 ----------
 cd "$APP_DIR"
-if sudo -u "$APP_USER" git show-ref --verify --quiet "refs/heads/$DEPLOY_BRANCH" 2>/dev/null; then
-  info "本地 $DEPLOY_BRANCH 分支已存在"
-else
-  CURRENT=$(sudo -u "$APP_USER" git rev-parse --abbrev-ref HEAD)
-  sudo -u "$APP_USER" git branch "$DEPLOY_BRANCH" "$CURRENT"
-  info "已基于 $CURRENT 创建 $DEPLOY_BRANCH 分支"
-fi
+CURRENT_BRANCH=$(sudo -u "$APP_USER" git rev-parse --abbrev-ref HEAD)
+info "服务器当前分支: $CURRENT_BRANCH"
+info "webhook 将响应匹配 refs/heads/${DEPLOY_BRANCH}* 的所有推送"
 
 # ---------- 完成 ----------
 SERVER_IP=$(curl -s --connect-timeout 5 ifconfig.me 2>/dev/null || echo '<服务器IP>')
@@ -186,12 +182,11 @@ echo "     Content type:  application/json"
 echo -e "     Secret:        ${YELLOW}$WEBHOOK_SECRET${NC}"
 echo "     Events:        Just the push event"
 echo ""
-echo -e "  ${CYAN}日常部署流程：${NC}"
+echo -e "  ${CYAN}触发规则：${NC}"
 echo ""
-echo "  # 在本地开发完成后"
-echo "  git checkout $DEPLOY_BRANCH"
-echo "  git merge <开发分支>"
-echo "  git push origin $DEPLOY_BRANCH   ← 自动触发服务器部署"
+echo "  推送到任何 ${DEPLOY_BRANCH}* 分支都会触发自动部署"
+echo "  例如: git push origin claude/push-local-repo-xxx"
+echo "  服务器当前分支: $CURRENT_BRANCH"
 echo ""
 echo -e "  ${CYAN}查看部署日志：${NC}"
 echo "  sudo journalctl -u webhook -f        # webhook 接收日志"
