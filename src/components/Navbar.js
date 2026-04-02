@@ -39,7 +39,7 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-16">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 hover:no-underline">
-          <Image src="/logo.svg" alt="罕见病联盟" width={36} height={36} className="w-9 h-9" priority />
+          <Image src="/logo.png" alt="罕见病联盟" width={36} height={36} className="w-9 h-9" priority />
           <span className="text-white font-bold text-lg">罕见病联盟</span>
         </Link>
 

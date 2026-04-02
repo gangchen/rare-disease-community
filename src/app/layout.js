@@ -4,7 +4,7 @@ export const metadata = {
   title: '罕见病联盟 - Rare Disease Alliance',
   description: '罕见病患者互助平台 — 你不是一个人',
   icons: {
-    icon: '/favicon.svg',
+    icon: '/favicon.png',
   },
 };
 
