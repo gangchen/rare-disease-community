@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
   <defs>
     <linearGradient id="fg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1e40af"/>
-      <stop offset="100%" stop-color="#38bdf8"/>
+      <stop offset="0%" stop-color="#B8710F"/>
+      <stop offset="100%" stop-color="#FCBF3A"/>
     </linearGradient>
   </defs>
   <!-- Simplified shrimp/dragon S-curve for favicon -->
@@ -10,10 +10,10 @@
         stroke="url(#fg)" stroke-width="2.5" stroke-linecap="round"/>
   <!-- Head -->
   <path d="M 10 11 C 8 13, 6 12, 5.5 10.5 C 5 9, 7 7, 9 8"
-        stroke="#1e40af" stroke-width="2" stroke-linecap="round" fill="none"/>
+        stroke="#B8710F" stroke-width="2" stroke-linecap="round" fill="none"/>
   <!-- Whisker -->
   <path d="M 10 11 C 7 15, 5 18, 6 22"
-        stroke="#38bdf8" stroke-width="1" stroke-linecap="round" fill="none" opacity="0.7"/>
+        stroke="#FCBF3A" stroke-width="1" stroke-linecap="round" fill="none" opacity="0.6"/>
   <!-- Eye -->
-  <circle cx="10" cy="10" r="1" fill="#0f172a"/>
+  <circle cx="10" cy="10" r="1" fill="#4A2D05"/>
 </svg>
