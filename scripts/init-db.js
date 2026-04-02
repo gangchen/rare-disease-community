@@ -124,6 +124,23 @@ db.exec(`
   CREATE INDEX idx_news_category ON news(category);
   CREATE INDEX idx_tokens_expires ON tokens(expires_at);
   CREATE INDEX idx_api_keys_user ON api_keys(user_id);
+
+  CREATE TABLE notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    source_user_id INTEGER NOT NULL,
+    post_id INTEGER NOT NULL,
+    comment_id INTEGER,
+    data TEXT DEFAULT '{}',
+    is_read INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (source_user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX idx_notifications_user ON notifications(user_id, is_read, created_at DESC);
 `);
 
 console.log('数据库表创建完成');

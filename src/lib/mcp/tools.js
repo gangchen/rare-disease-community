@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { getAllPosts, getPostById, createPost, addComment, toggleLike, searchPosts } from '@/data/posts';
 import { getAllUsers, getUserById } from '@/data/users';
 import { getAllNews, getNewsById } from '@/data/news';
+import { getNotifications, markAsRead } from '@/data/notifications';
 import { getDb } from '@/lib/db';
 
 function ok(text) {
@@ -217,6 +218,48 @@ export function registerTools(server, authContext = null) {
         return ok(`罕见病联盟社区统计：\n\n注册用户: ${users}\n收录病种: ${diseases}\n社区帖子: ${posts}\n新闻文章: ${news}\n评论总数: ${comments}\n点赞总数: ${likes}`);
       } catch (e) {
         return err(`获取统计失败: ${e.message}`);
+      }
+    }
+  );
+
+  // ====== get_notifications ======
+  server.tool(
+    'get_notifications',
+    'Get user notifications (requires auth)',
+    {
+      unreadOnly: z.boolean().optional().describe('Only return unread notifications (default false)'),
+      limit: z.number().optional().describe('Max results (default 20)')
+    },
+    async ({ unreadOnly = false, limit = 20 }) => {
+      try {
+        if (!userId) return err('需要登录才能查看通知。');
+        const result = getNotifications(userId, { unreadOnly, limit });
+        if (result.items.length === 0) return ok(unreadOnly ? '没有未读通知。' : '暂无通知。');
+        const typeLabel = { comment: '评论', like: '点赞' };
+        const list = result.items.map(n =>
+          `${n.isRead ? '  ' : '🔴'} [#${n.id}] ${typeLabel[n.type] || n.type} — ${n.sourceUser} ${n.type === 'comment' ? '评论了' : '点赞了'}你的帖子「${n.postTitle}」 (${n.date})`
+        ).join('\n');
+        return ok(`通知列表（未读 ${result.unreadCount} 条，共 ${result.total} 条）：\n\n${list}`);
+      } catch (e) {
+        return err(`获取通知失败: ${e.message}`);
+      }
+    }
+  );
+
+  // ====== mark_notifications_read ======
+  server.tool(
+    'mark_notifications_read',
+    'Mark notifications as read (requires auth)',
+    {
+      notificationIds: z.array(z.number()).optional().describe('Specific notification IDs to mark read (omit for all)')
+    },
+    async ({ notificationIds }) => {
+      try {
+        if (!userId) return err('需要登录。');
+        markAsRead(userId, notificationIds);
+        return ok(notificationIds ? `已标记 ${notificationIds.length} 条通知为已读。` : '已将所有通知标记为已读。');
+      } catch (e) {
+        return err(`操作失败: ${e.message}`);
       }
     }
   );

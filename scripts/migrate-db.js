@@ -122,6 +122,29 @@ if (!postColumns.includes('category')) {
   migrated++;
 }
 
+// --- notifications 表 ---
+if (!existingTables.includes('notifications')) {
+  db.exec(`
+    CREATE TABLE notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      source_user_id INTEGER NOT NULL,
+      post_id INTEGER NOT NULL,
+      comment_id INTEGER,
+      data TEXT DEFAULT '{}',
+      is_read INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (source_user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+    );
+    CREATE INDEX idx_notifications_user ON notifications(user_id, is_read, created_at DESC);
+  `);
+  console.log('✓ 创建 notifications 表');
+  migrated++;
+}
+
 // --- 未来的迁移在这里追加 ---
 // if (!existingTables.includes('xxx')) { ... }
 
