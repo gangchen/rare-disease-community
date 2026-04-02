@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 const NAV_ITEMS = [
   { href: '/posts', label: '社区' },
   { href: '/news', label: '新闻' },
+  { href: '/api-docs', label: 'API' },
 ];
 
 export default function Navbar() {
