@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Menu, X, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -37,9 +38,7 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-16">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 hover:no-underline">
-          <div className="w-8 h-8 rounded-full bg-primary-400 flex items-center justify-center">
-            <div className="w-3 h-3 rounded-full bg-surface-900" />
-          </div>
+          <Image src="/logo.svg" alt="罕见病联盟" width={36} height={36} className="w-9 h-9" priority />
           <span className="text-white font-bold text-lg">罕见病联盟</span>
         </Link>
 
