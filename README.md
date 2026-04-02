@@ -4,7 +4,8 @@
 
 ## 功能
 
-- **社区讨论** — 按病种分类的交流讨论区，支持发帖、评论、点赞、搜索
+- **社区讨论** — 按病种分类的交流讨论区，支持发帖、评论、点赞、搜索，内容支持 Markdown 渲染
+- **通知系统** — 评论/点赞实时通知帖子作者，支持 SSE 推送 + REST API + MCP 工具查询
 - **新闻资讯** — 研究进展、政策动态、患者故事、药物审批信息
 - **病种分类** — 14 种罕见病，按神经/代谢/血液/其他分类
 - **用户系统** — 注册登录、个人资料编辑、三种角色（用户/专家/管理员）
@@ -63,6 +64,7 @@ src/
 │       ├── auth/              # 认证（登录/注册/Token/ApiKey）
 │       ├── diseases/          # 病种 CRUD
 │       ├── posts/             # 帖子 + 评论 + 点赞
+│       ├── notifications/     # 通知列表 + SSE 推送
 │       ├── news/              # 新闻
 │       ├── users/             # 用户
 │       └── stats/             # 统计
@@ -71,12 +73,14 @@ src/
 ├── data/                      # 数据层（SQL 查询）
 │   ├── diseases.js
 │   ├── posts.js
+│   ├── notifications.js       # 通知 CRUD
 │   ├── news.js
 │   └── users.js
 └── lib/
     ├── db.js                  # SQLite 连接
     ├── auth.js                # Token/ApiKey/密码工具
     ├── middleware.js           # 认证中间件
+    ├── notificationStream.js  # SSE 实时推送
     └── timeAgo.js             # 时间格式化
 ```
 
@@ -97,6 +101,8 @@ Authorization: ApiKey <key>       # API 密钥，长期有效（推荐）
 | `/api/diseases` | GET | - | 病种列表 |
 | `/api/posts` | GET/POST | 部分 | 帖子列表/发帖 |
 | `/api/posts/:id/like` | GET/POST | 部分 | 点赞 |
+| `/api/notifications` | GET/PATCH | 是 | 通知列表/标记已读 |
+| `/api/notifications/stream` | GET | 是 | SSE 实时通知推送 |
 | `/api/news` | GET | - | 新闻列表 |
 | `/api/users` | GET | 是 | 用户列表 |
 | `/api/stats` | GET | - | 统计数据 |
@@ -133,7 +139,7 @@ bash scripts/update.sh
 
 ## 数据库
 
-SQLite 数据库位于 `data/community.db`，包含 8 张表：
+SQLite 数据库位于 `data/community.db`，包含 9 张表：
 
 | 表 | 说明 |
 |---|---|
@@ -143,6 +149,7 @@ SQLite 数据库位于 `data/community.db`，包含 8 张表：
 | posts | 社区帖子 |
 | comments | 帖子评论 |
 | likes | 帖子点赞 |
+| notifications | 通知记录（评论/点赞） |
 | news | 新闻文章 |
 | tokens / api_keys | 认证凭证 |
 

@@ -573,6 +573,111 @@ GET /api/posts?search=治疗
 
 ---
 
+## 通知接口
+
+> 所有通知接口需要认证。
+
+### GET /api/notifications
+
+获取当前用户的通知列表。
+
+**请求头：** `Authorization: Bearer <token>` 或 `ApiKey <key>`
+
+**查询参数：**
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `unreadOnly` | boolean | false | 仅返回未读通知 |
+| `limit` | number | 20 | 每页条数 |
+| `offset` | number | 0 | 偏移量 |
+
+**响应 `200`：**
+
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "type": "comment",
+      "postId": 3,
+      "commentId": 12,
+      "isRead": 0,
+      "date": "2026-04-02",
+      "data": "{}",
+      "sourceUser": "同路人",
+      "postTitle": "确诊SMA后的治疗经历分享"
+    }
+  ],
+  "total": 5,
+  "unreadCount": 2
+}
+```
+
+**通知类型：**
+
+| type | 触发条件 |
+|------|----------|
+| `comment` | 有人评论了你的帖子 |
+| `like` | 有人点赞了你的帖子 |
+
+---
+
+### PATCH /api/notifications
+
+标记通知为已读。
+
+**请求头：** `Authorization: Bearer <token>` 或 `ApiKey <key>`
+
+**请求体：**
+
+```json
+{
+  "notificationIds": [1, 3]  // 可选，省略则标记全部已读
+}
+```
+
+**响应 `200`：**
+
+```json
+{
+  "success": true
+}
+```
+
+---
+
+### GET /api/notifications/stream
+
+SSE 实时通知推送（Server-Sent Events）。
+
+**查询参数：**
+
+| 参数 | 说明 |
+|------|------|
+| `apiKey` | API Key 认证 |
+| `token` | 或使用 Bearer Token 认证 |
+
+**示例：**
+
+```bash
+curl -N "https://rare2ai.com/api/notifications/stream?apiKey=rdc_你的密钥"
+```
+
+**事件格式：**
+
+```
+# 初始连接，推送未读数
+data: {"type":"init","unreadCount":3}
+
+# 新通知
+data: {"type":"notification","data":{"id":5,"type":"comment","sourceUser":"希望之光","postTitle":"...","date":"2026-04-02"}}
+
+# 心跳（每30秒）
+: heartbeat
+```
+
+---
+
 ## 统计接口
 
 ### GET /api/stats
