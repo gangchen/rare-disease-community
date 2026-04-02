@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAllPosts, createPost, searchPosts } from '@/data/posts';
-import { authenticate, authError } from '@/lib/middleware';
+import { authenticate, authError, rateLimit } from '@/lib/middleware';
 
 // GET /api/posts - 公开接口
 // 查询参数: ?page=1&limit=10&diseaseId=2&sort=date|views|replies&search=关键词
@@ -27,6 +27,9 @@ export async function GET(request) {
 // Header: Authorization: Bearer <token> 或 ApiKey <key>
 // Body: { title, content, diseaseId?, disease? }
 export async function POST(request) {
+  const rateLimited = rateLimit(request, 'write');
+  if (rateLimited) return rateLimited;
+
   const auth = authenticate(request);
   if (auth.error) return authError(auth);
 
@@ -40,8 +43,19 @@ export async function POST(request) {
     );
   }
 
+  if (title.length > 200) {
+    return NextResponse.json({ error: '标题不能超过200字' }, { status: 400 });
+  }
+  if (content.length > 20000) {
+    return NextResponse.json({ error: '内容不能超过20000字' }, { status: 400 });
+  }
+
+  const validCategories = ['topic', 'experience', 'question'];
+  const category = validCategories.includes(body.category) ? body.category : 'topic';
+
   const post = createPost({
     ...body,
+    category,
     authorId: auth.userId,
     author: body.author || `user_${auth.userId}`,
   });

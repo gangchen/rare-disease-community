@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createUser } from '@/data/users';
 import { generateToken } from '@/lib/auth';
+import { rateLimit } from '@/lib/middleware';
 
 // POST /api/auth/register
 // Body: { username, email, password, role?, diseaseIds?, bio? }
 export async function POST(request) {
+  const rateLimited = rateLimit(request, 'auth');
+  if (rateLimited) return rateLimited;
+
   try {
     const body = await request.json();
     const { username, email, password } = body;

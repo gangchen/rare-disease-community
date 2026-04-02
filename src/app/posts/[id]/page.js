@@ -6,6 +6,8 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { ArrowLeft, MessageCircle, Eye, Calendar, User, Send, Heart, Pencil, Trash2, X, Check } from 'lucide-react';
 import { timeAgo } from '@/lib/timeAgo';
+import RoleBadge from '@/components/RoleBadge';
+import SafeContent from '@/components/SafeContent';
 
 export default function PostDetailPage() {
   const { id } = useParams();
@@ -232,15 +234,13 @@ export default function PostDetailPage() {
               <h1 className="text-2xl font-bold text-white mb-4">{post.title}</h1>
 
               <div className="flex flex-wrap items-center gap-4 mb-6 text-sm text-gray-500">
-                <span className="flex items-center gap-1"><User className="w-4 h-4" /> {post.author}</span>
+                <span className="flex items-center gap-1"><User className="w-4 h-4" /> {post.author} <RoleBadge role={post.authorRole} /></span>
                 <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {timeAgo(post.date)}</span>
                 <span className="flex items-center gap-1"><Eye className="w-4 h-4" /> {post.views}</span>
                 <span className="flex items-center gap-1"><MessageCircle className="w-4 h-4" /> {post.replies}</span>
               </div>
 
-              <div className="text-gray-300 leading-relaxed whitespace-pre-wrap mb-6">
-                {post.content}
-              </div>
+              <SafeContent text={post.content} className="text-gray-300 leading-relaxed mb-6" />
 
               {/* Like button */}
               <button
@@ -274,9 +274,10 @@ export default function PostDetailPage() {
                       {c.author[0]}
                     </div>
                     <span className="font-medium text-gray-300 text-sm">{c.author}</span>
+                    <RoleBadge role={c.authorRole} />
                     <span className="text-xs text-gray-500">{timeAgo(c.date)}</span>
                   </div>
-                  <p className="text-gray-400 text-sm leading-relaxed pl-11">{c.content}</p>
+                  <SafeContent text={c.content} className="text-gray-400 text-sm leading-relaxed pl-11" />
                 </div>
               ))}
             </div>

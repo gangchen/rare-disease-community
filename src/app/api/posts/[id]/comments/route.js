@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPostById, addComment } from '@/data/posts';
-import { authenticate, authError } from '@/lib/middleware';
+import { authenticate, authError, rateLimit } from '@/lib/middleware';
 
 // GET /api/posts/:id/comments - 公开接口
 export async function GET(request, { params }) {
@@ -18,6 +18,9 @@ export async function GET(request, { params }) {
 // Header: Authorization: Bearer <token> 或 ApiKey <key>
 // Body: { content }
 export async function POST(request, { params }) {
+  const rateLimited = rateLimit(request, 'write');
+  if (rateLimited) return rateLimited;
+
   const auth = authenticate(request);
   if (auth.error) return authError(auth);
 
@@ -30,6 +33,10 @@ export async function POST(request, { params }) {
       { error: '缺少必填字段: content' },
       { status: 400 }
     );
+  }
+
+  if (content.length > 5000) {
+    return NextResponse.json({ error: '评论不能超过5000字' }, { status: 400 });
   }
 
   const comment = addComment(id, {

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { verifyToken, verifyApiKey } from '@/lib/auth';
+import { checkRateLimit, getClientId, RATE_LIMITS } from '@/lib/rateLimit';
 
 // 从请求中提取认证信息并验证
 export function authenticate(request) {
@@ -44,4 +45,24 @@ export function requireRole(auth, ...roles) {
 // 快捷方法：返回认证错误响应
 export function authError(auth) {
   return NextResponse.json({ error: auth.error }, { status: auth.status });
+}
+
+// 检查请求频率限制
+export function rateLimit(request, type = 'read') {
+  const clientId = getClientId(request);
+  const config = RATE_LIMITS[type] || RATE_LIMITS.read;
+  const result = checkRateLimit(`${type}:${clientId}`, config);
+  if (!result.allowed) {
+    return NextResponse.json(
+      { error: '请求过于频繁，请稍后再试' },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(Math.ceil(result.resetMs / 1000)),
+          'X-RateLimit-Remaining': '0',
+        },
+      }
+    );
+  }
+  return null;
 }

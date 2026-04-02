@@ -4,7 +4,7 @@ function enrichPost(row) {
   if (!row) return null;
   const db = getDb();
   const comments = db.prepare(`
-    SELECT c.id, u.username AS author, c.author_id AS authorId, c.content, c.created_at AS date
+    SELECT c.id, u.username AS author, u.role AS authorRole, c.author_id AS authorId, c.content, c.created_at AS date
     FROM comments c JOIN users u ON c.author_id = u.id
     WHERE c.post_id = ? ORDER BY c.created_at
   `).all(row.id);
@@ -63,7 +63,7 @@ export function getAllPosts({ page = 1, limit = 10, diseaseId, category, sort = 
   const total = countRow.total;
 
   const rows = db.prepare(`
-    SELECT p.id, p.title, p.content, u.username AS author, p.author_id AS authorId,
+    SELECT p.id, p.title, p.content, u.username AS author, u.role AS authorRole, p.author_id AS authorId,
            p.disease_id AS diseaseId, COALESCE(d.name, '综合') AS disease,
            p.category, p.created_at AS date, p.views,
            (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS reply_count,
@@ -87,7 +87,7 @@ export function getAllPosts({ page = 1, limit = 10, diseaseId, category, sort = 
 export function getPostById(id) {
   const db = getDb();
   const row = db.prepare(`
-    SELECT p.id, p.title, p.content, u.username AS author, p.author_id AS authorId,
+    SELECT p.id, p.title, p.content, u.username AS author, u.role AS authorRole, p.author_id AS authorId,
            p.disease_id AS diseaseId, COALESCE(d.name, '综合') AS disease,
            p.category, p.created_at AS date, p.views
     FROM posts p
@@ -145,7 +145,7 @@ export function addComment(postId, { authorId, content }) {
   ).run(postId, authorId, content, now);
 
   const comment = db.prepare(`
-    SELECT c.id, u.username AS author, c.author_id AS authorId, c.content, c.created_at AS date
+    SELECT c.id, u.username AS author, u.role AS authorRole, c.author_id AS authorId, c.content, c.created_at AS date
     FROM comments c JOIN users u ON c.author_id = u.id
     WHERE c.id = ?
   `).get(result.lastInsertRowid);
