@@ -16,9 +16,10 @@ export async function GET(request) {
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '10');
   const diseaseId = searchParams.get('diseaseId') ? parseInt(searchParams.get('diseaseId')) : undefined;
+  const category = searchParams.get('category') || undefined;
   const sort = searchParams.get('sort') || 'date';
 
-  const result = getAllPosts({ page, limit, diseaseId, sort });
+  const result = getAllPosts({ page, limit, diseaseId, category, sort });
   return NextResponse.json(result);
 }
 

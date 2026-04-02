@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 export default function NewPostPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ title: '', content: '', disease: '' });
+  const [form, setForm] = useState({ title: '', content: '', disease: '', category: 'topic' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -45,6 +45,7 @@ export default function NewPostPage() {
           title: form.title,
           content: form.content,
           disease: form.disease || '综合',
+          category: form.category,
         }),
       });
 
@@ -98,6 +99,26 @@ export default function NewPostPage() {
               placeholder="输入帖子标题..."
               className="w-full px-4 py-3 rounded-xl bg-surface-700 border border-surface-600 text-white placeholder-gray-500 focus:border-primary-400 focus:ring-1 focus:ring-primary-400/20 outline-none transition"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">帖子类型</label>
+            <div className="flex gap-2">
+              {[{ key: 'topic', label: '话题' }, { key: 'experience', label: '经验' }, { key: 'question', label: '问答' }].map((cat) => (
+                <button
+                  key={cat.key}
+                  type="button"
+                  onClick={() => setForm({ ...form, category: cat.key })}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                    form.category === cat.key
+                      ? 'bg-primary-400 text-black'
+                      : 'bg-surface-700 text-gray-400 border border-surface-600 hover:text-white'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>

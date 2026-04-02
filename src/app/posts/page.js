@@ -1,48 +1,74 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
-import { Search, Heart, MessageCircle, PenLine, TrendingUp, Users } from 'lucide-react';
+import { Search, Heart, MessageCircle, PenLine, TrendingUp, Users, ChevronDown } from 'lucide-react';
 import { timeAgo } from '@/lib/timeAgo';
 
-const TABS = ['全部', '话题', '经验', '问答'];
+const TABS = [
+  { key: '', label: '全部' },
+  { key: 'topic', label: '话题' },
+  { key: 'experience', label: '经验' },
+  { key: 'question', label: '问答' },
+];
+
+const PAGE_SIZE = 12;
 
 export default function PostsPage() {
   const [posts, setPosts] = useState([]);
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState('全部');
+  const [activeTab, setActiveTab] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [topPosts, setTopPosts] = useState([]);
   const [recentUsers, setRecentUsers] = useState([]);
 
-  useEffect(() => {
-    fetch('/api/posts?limit=12')
+  const fetchPosts = useCallback((pageNum, category, append = false) => {
+    if (append) setLoadingMore(true); else setLoading(true);
+    const params = new URLSearchParams({ page: pageNum, limit: PAGE_SIZE });
+    if (category) params.set('category', category);
+    fetch(`/api/posts?${params}`)
       .then((r) => r.json())
       .then((data) => {
-        setPosts(data.items || []);
-        const sorted = [...(data.items || [])].sort((a, b) => b.views - a.views);
-        setTopPosts(sorted.slice(0, 5));
+        const items = data.items || [];
+        if (append) {
+          setPosts(prev => [...prev, ...items]);
+        } else {
+          setPosts(items);
+          const sorted = [...items].sort((a, b) => b.views - a.views);
+          setTopPosts(sorted.slice(0, 5));
+        }
+        setPage(pageNum);
+        setHasMore(pageNum < data.totalPages);
       })
-      .finally(() => setLoading(false));
-
-    fetch('/api/users')
-      .then((r) => {
-        if (r.ok) return r.json();
-        return [];
-      })
-      .then((data) => setRecentUsers(Array.isArray(data) ? data.slice(0, 8) : (data.items || []).slice(0, 8)));
+      .finally(() => { setLoading(false); setLoadingMore(false); });
   }, []);
 
   useEffect(() => {
-    if (!search.trim()) return;
+    fetchPosts(1, activeTab);
+  }, [activeTab, fetchPosts]);
+
+  useEffect(() => {
+    fetch('/api/users')
+      .then((r) => r.ok ? r.json() : { items: [] })
+      .then((data) => setRecentUsers((data.items || []).slice(0, 8)));
+  }, []);
+
+  useEffect(() => {
+    if (!search.trim()) {
+      fetchPosts(1, activeTab);
+      return;
+    }
     const timer = setTimeout(() => {
       fetch(`/api/posts?search=${encodeURIComponent(search)}&limit=20`)
         .then((r) => r.json())
-        .then((data) => setPosts(data.items || []));
+        .then((data) => { setPosts(data.items || []); setHasMore(false); });
     }, 300);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, activeTab, fetchPosts]);
 
   const avatarColors = [
     'bg-primary-400/20 text-primary-400',
@@ -51,6 +77,8 @@ export default function PostsPage() {
     'bg-rose-400/20 text-rose-400',
     'bg-emerald-400/20 text-emerald-400',
   ];
+
+  const CATEGORY_LABELS = { topic: '话题', experience: '经验', question: '问答' };
 
   return (
     <>
@@ -77,15 +105,15 @@ export default function PostsPage() {
           <div className="flex items-center justify-center gap-2 mt-8">
             {TABS.map((tab) => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
+                key={tab.key}
+                onClick={() => { setActiveTab(tab.key); setSearch(''); }}
                 className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
-                  activeTab === tab
+                  activeTab === tab.key
                     ? 'bg-primary-400 text-black'
                     : 'bg-surface-800 text-gray-400 hover:text-white'
                 }`}
               >
-                {tab}
+                {tab.label}
               </button>
             ))}
           </div>
@@ -118,45 +146,66 @@ export default function PostsPage() {
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {posts.map((post, idx) => (
-                    <Link
-                      key={post.id}
-                      href={`/posts/${post.id}`}
-                      className="bg-surface-800 border border-surface-600 rounded-xl p-5 hover:border-primary-400/50 transition-all group"
-                    >
-                      {/* Author row */}
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${avatarColors[idx % avatarColors.length]}`}>
-                          {post.author?.[0] || '?'}
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {posts.map((post, idx) => (
+                      <Link
+                        key={post.id}
+                        href={`/posts/${post.id}`}
+                        className="bg-surface-800 border border-surface-600 rounded-xl p-5 hover:border-primary-400/50 transition-all group"
+                      >
+                        {/* Author row */}
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${avatarColors[idx % avatarColors.length]}`}>
+                            {post.author?.[0] || '?'}
+                          </div>
+                          <span className="text-sm text-gray-400">{post.author}</span>
+                          <div className="ml-auto flex items-center gap-1.5">
+                            {post.category && CATEGORY_LABELS[post.category] && (
+                              <span className="text-xs px-2 py-0.5 bg-surface-600 text-gray-400 rounded-full">{CATEGORY_LABELS[post.category]}</span>
+                            )}
+                            {post.disease && post.disease !== '综合' && (
+                              <span className="text-xs px-2 py-0.5 bg-primary-400/10 text-primary-400 rounded-full">{post.disease}</span>
+                            )}
+                          </div>
                         </div>
-                        <span className="text-sm text-gray-400">{post.author}</span>
-                        {post.disease && post.disease !== '综合' && (
-                          <span className="ml-auto text-xs px-2 py-0.5 bg-primary-400/10 text-primary-400 rounded-full">{post.disease}</span>
-                        )}
-                      </div>
 
-                      {/* Title */}
-                      <h3 className="text-white font-semibold mb-2 line-clamp-2 group-hover:text-primary-400 transition-colors">{post.title}</h3>
+                        {/* Title */}
+                        <h3 className="text-white font-semibold mb-2 line-clamp-2 group-hover:text-primary-400 transition-colors">{post.title}</h3>
 
-                      {/* Excerpt */}
-                      <p className="text-gray-500 text-sm line-clamp-2 mb-4">{post.content}</p>
+                        {/* Excerpt */}
+                        <p className="text-gray-500 text-sm line-clamp-2 mb-4">{post.content}</p>
 
-                      {/* Meta */}
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Heart className="w-3.5 h-3.5" />
-                          {post.likes || 0}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MessageCircle className="w-3.5 h-3.5" />
-                          {post.replies || 0}
-                        </span>
-                        <span className="ml-auto">{timeAgo(post.date)}</span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                        {/* Meta */}
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Heart className="w-3.5 h-3.5" />
+                            {post.likes || 0}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            {post.replies || 0}
+                          </span>
+                          <span className="ml-auto">{timeAgo(post.date)}</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* Load More */}
+                  {hasMore && (
+                    <div className="text-center mt-8">
+                      <button
+                        onClick={() => fetchPosts(page + 1, activeTab, true)}
+                        disabled={loadingMore}
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-surface-800 border border-surface-600 text-gray-400 rounded-xl text-sm font-medium hover:text-white hover:border-primary-400/50 transition disabled:opacity-50"
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                        {loadingMore ? '加载中...' : '加载更多'}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
 
               {!loading && posts.length === 0 && (

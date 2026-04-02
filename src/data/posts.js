@@ -37,15 +37,20 @@ export function isLikedByUser(postId, userId) {
   return !!db.prepare('SELECT id FROM likes WHERE post_id = ? AND user_id = ?').get(postId, userId);
 }
 
-export function getAllPosts({ page = 1, limit = 10, diseaseId, sort = 'date' } = {}) {
+export function getAllPosts({ page = 1, limit = 10, diseaseId, category, sort = 'date' } = {}) {
   const db = getDb();
 
-  let where = '';
+  const conditions = [];
   const params = [];
   if (diseaseId) {
-    where = 'WHERE p.disease_id = ?';
+    conditions.push('p.disease_id = ?');
     params.push(diseaseId);
   }
+  if (category) {
+    conditions.push('p.category = ?');
+    params.push(category);
+  }
+  const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 
   const orderMap = {
     date: 'p.created_at DESC',
@@ -60,7 +65,7 @@ export function getAllPosts({ page = 1, limit = 10, diseaseId, sort = 'date' } =
   const rows = db.prepare(`
     SELECT p.id, p.title, p.content, u.username AS author, p.author_id AS authorId,
            p.disease_id AS diseaseId, COALESCE(d.name, '综合') AS disease,
-           p.created_at AS date, p.views,
+           p.category, p.created_at AS date, p.views,
            (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS reply_count,
            (SELECT COUNT(*) FROM likes WHERE post_id = p.id) AS likes_count
     FROM posts p
@@ -84,7 +89,7 @@ export function getPostById(id) {
   const row = db.prepare(`
     SELECT p.id, p.title, p.content, u.username AS author, p.author_id AS authorId,
            p.disease_id AS diseaseId, COALESCE(d.name, '综合') AS disease,
-           p.created_at AS date, p.views
+           p.category, p.created_at AS date, p.views
     FROM posts p
     JOIN users u ON p.author_id = u.id
     LEFT JOIN diseases d ON p.disease_id = d.id
@@ -94,14 +99,38 @@ export function getPostById(id) {
   return enrichPost(row);
 }
 
-export function createPost({ title, content, authorId, diseaseId, disease }) {
+export function createPost({ title, content, authorId, diseaseId, disease, category = 'topic' }) {
   const db = getDb();
   const now = new Date().toISOString().split('T')[0];
   const result = db.prepare(
-    'INSERT INTO posts (title, content, author_id, disease_id, created_at, views) VALUES (?, ?, ?, ?, ?, 0)'
-  ).run(title, content, authorId, diseaseId || null, now);
+    'INSERT INTO posts (title, content, author_id, disease_id, category, created_at, views) VALUES (?, ?, ?, ?, ?, ?, 0)'
+  ).run(title, content, authorId, diseaseId || null, category, now);
 
   return getPostById(result.lastInsertRowid);
+}
+
+export function incrementViews(id) {
+  const db = getDb();
+  db.prepare('UPDATE posts SET views = views + 1 WHERE id = ?').run(id);
+}
+
+export function updatePost(id, { title, content, category }) {
+  const db = getDb();
+  const sets = [];
+  const params = [];
+  if (title !== undefined) { sets.push('title = ?'); params.push(title); }
+  if (content !== undefined) { sets.push('content = ?'); params.push(content); }
+  if (category !== undefined) { sets.push('category = ?'); params.push(category); }
+  if (sets.length === 0) return getPostById(id);
+  params.push(id);
+  db.prepare(`UPDATE posts SET ${sets.join(', ')} WHERE id = ?`).run(...params);
+  return getPostById(id);
+}
+
+export function deletePost(id) {
+  const db = getDb();
+  const result = db.prepare('DELETE FROM posts WHERE id = ?').run(id);
+  return result.changes > 0;
 }
 
 export function addComment(postId, { authorId, content }) {

@@ -114,6 +114,14 @@ if (!existingTables.includes('api_keys')) {
   migrated++;
 }
 
+// --- posts.category 列 ---
+const postColumns = db.prepare("PRAGMA table_info(posts)").all().map(c => c.name);
+if (!postColumns.includes('category')) {
+  db.exec("ALTER TABLE posts ADD COLUMN category TEXT NOT NULL DEFAULT 'topic'");
+  console.log('✓ 添加 posts.category 列');
+  migrated++;
+}
+
 // --- 未来的迁移在这里追加 ---
 // if (!existingTables.includes('xxx')) { ... }
 

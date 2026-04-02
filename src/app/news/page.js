@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { timeAgo } from '@/lib/timeAgo';
+import { ChevronDown } from 'lucide-react';
 
 const CATEGORIES = [
   { key: '', label: '全部' },
@@ -28,29 +29,45 @@ const GRADIENT_COLORS = [
   'from-emerald-400/20 to-teal-700/10',
 ];
 
+const PAGE_SIZE = 12;
+
 export default function NewsPage() {
   const [news, setNews] = useState([]);
   const [featured, setFeatured] = useState(null);
   const [category, setCategory] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
 
-  useEffect(() => {
-    setLoading(true);
-    const url = category ? `/api/news?limit=12&category=${category}` : '/api/news?limit=12';
-    fetch(url)
+  const fetchNews = useCallback((pageNum, cat, append = false) => {
+    if (append) setLoadingMore(true); else setLoading(true);
+    const params = new URLSearchParams({ page: pageNum, limit: PAGE_SIZE });
+    if (cat) params.set('category', cat);
+    fetch(`/api/news?${params}`)
       .then((r) => r.json())
       .then((data) => {
         const items = data.items || [];
-        if (!category && items.length > 0) {
-          setFeatured(items[0]);
-          setNews(items.slice(1));
+        if (append) {
+          setNews(prev => [...prev, ...items]);
         } else {
-          setFeatured(null);
-          setNews(items);
+          if (!cat && items.length > 0) {
+            setFeatured(items[0]);
+            setNews(items.slice(1));
+          } else {
+            setFeatured(null);
+            setNews(items);
+          }
         }
+        setPage(pageNum);
+        setHasMore(pageNum < data.totalPages);
       })
-      .finally(() => setLoading(false));
-  }, [category]);
+      .finally(() => { setLoading(false); setLoadingMore(false); });
+  }, []);
+
+  useEffect(() => {
+    fetchNews(1, category);
+  }, [category, fetchNews]);
 
   return (
     <>
@@ -106,26 +123,41 @@ export default function NewsPage() {
 
               {/* News Grid */}
               {news.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                  {news.map((item, idx) => (
-                    <Link
-                      key={item.id}
-                      href={`/news/${item.id}`}
-                      className="bg-surface-800 border border-surface-600 rounded-xl overflow-hidden group hover:border-primary-400/50 transition-all"
-                    >
-                      {/* Gradient placeholder for image */}
-                      <div className={`h-40 bg-gradient-to-br ${GRADIENT_COLORS[(idx + 1) % GRADIENT_COLORS.length]}`} />
-                      <div className="p-5">
-                        <span className="inline-block px-2 py-0.5 bg-primary-400/10 text-primary-400 text-xs font-medium rounded mb-3">
-                          {CATEGORY_LABELS[item.category] || item.category}
-                        </span>
-                        <h3 className="text-white font-semibold mb-2 line-clamp-2 group-hover:text-primary-400 transition-colors">{item.title}</h3>
-                        <p className="text-gray-500 text-sm line-clamp-2 mb-3">{item.summary}</p>
-                        <p className="text-xs text-gray-600">{timeAgo(item.date)}</p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    {news.map((item, idx) => (
+                      <Link
+                        key={item.id}
+                        href={`/news/${item.id}`}
+                        className="bg-surface-800 border border-surface-600 rounded-xl overflow-hidden group hover:border-primary-400/50 transition-all"
+                      >
+                        <div className={`h-40 bg-gradient-to-br ${GRADIENT_COLORS[(idx + 1) % GRADIENT_COLORS.length]}`} />
+                        <div className="p-5">
+                          <span className="inline-block px-2 py-0.5 bg-primary-400/10 text-primary-400 text-xs font-medium rounded mb-3">
+                            {CATEGORY_LABELS[item.category] || item.category}
+                          </span>
+                          <h3 className="text-white font-semibold mb-2 line-clamp-2 group-hover:text-primary-400 transition-colors">{item.title}</h3>
+                          <p className="text-gray-500 text-sm line-clamp-2 mb-3">{item.summary}</p>
+                          <p className="text-xs text-gray-600">{timeAgo(item.date)}</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* Load More */}
+                  {hasMore && (
+                    <div className="text-center mt-8">
+                      <button
+                        onClick={() => fetchNews(page + 1, category, true)}
+                        disabled={loadingMore}
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-surface-800 border border-surface-600 text-gray-400 rounded-xl text-sm font-medium hover:text-white hover:border-primary-400/50 transition disabled:opacity-50"
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                        {loadingMore ? '加载中...' : '加载更多'}
+                      </button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="text-center py-20 text-gray-500">暂无新闻</div>
               )}
