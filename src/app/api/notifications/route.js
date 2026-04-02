@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { authenticate, authError } from '@/lib/middleware';
 import { getNotifications, markAsRead } from '@/data/notifications';
+import { withLogging } from '@/lib/apiLogger';
 
 // GET /api/notifications
-export async function GET(request) {
+async function handleGET(request) {
   const auth = authenticate(request);
   if (auth.error) return authError(auth);
 
@@ -17,7 +18,7 @@ export async function GET(request) {
 }
 
 // PATCH /api/notifications - mark as read
-export async function PATCH(request) {
+async function handlePATCH(request) {
   const auth = authenticate(request);
   if (auth.error) return authError(auth);
 
@@ -27,3 +28,6 @@ export async function PATCH(request) {
   markAsRead(auth.userId, notificationIds);
   return NextResponse.json({ success: true });
 }
+
+export const GET = withLogging(handleGET, 'notifications');
+export const PATCH = withLogging(handlePATCH, 'notifications');

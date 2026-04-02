@@ -2,10 +2,11 @@ import { NextResponse } from 'next/server';
 import { createUser } from '@/data/users';
 import { generateToken } from '@/lib/auth';
 import { rateLimit } from '@/lib/middleware';
+import { withLogging } from '@/lib/apiLogger';
 
 // POST /api/auth/register
 // Body: { username, email, password, role?, diseaseIds?, bio? }
-export async function POST(request) {
+async function handlePOST(request) {
   const rateLimited = rateLimit(request, 'auth');
   if (rateLimited) return rateLimited;
 
@@ -48,3 +49,5 @@ export async function POST(request) {
     );
   }
 }
+
+export const POST = withLogging(handlePOST, 'auth');

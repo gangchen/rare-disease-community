@@ -4,8 +4,9 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { createNotification } from '@/data/notifications';
 import { notifyUser } from '@/lib/notificationStream';
+import { withLogging } from '@/lib/apiLogger';
 
-export async function GET(request, { params }) {
+async function handleGET(request, { params }) {
   const postId = parseInt(params.id);
   const db = getDb();
   const count = db.prepare('SELECT COUNT(*) AS c FROM likes WHERE post_id = ?').get(postId).c;
@@ -19,7 +20,7 @@ export async function GET(request, { params }) {
   return NextResponse.json({ count, liked });
 }
 
-export async function POST(request, { params }) {
+async function handlePOST(request, { params }) {
   const auth = await authenticate(request);
   if (!auth) {
     return NextResponse.json({ error: '请先登录' }, { status: 401 });
@@ -46,3 +47,6 @@ export async function POST(request, { params }) {
 
   return NextResponse.json(result);
 }
+
+export const GET = withLogging(handleGET, 'posts');
+export const POST = withLogging(handlePOST, 'posts');

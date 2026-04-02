@@ -3,9 +3,10 @@ import { getPostById, addComment } from '@/data/posts';
 import { authenticate, authError, rateLimit } from '@/lib/middleware';
 import { createNotification } from '@/data/notifications';
 import { notifyUser } from '@/lib/notificationStream';
+import { withLogging } from '@/lib/apiLogger';
 
 // GET /api/posts/:id/comments - 公开接口
-export async function GET(request, { params }) {
+async function handleGET(request, { params }) {
   const id = parseInt(params.id);
   const post = getPostById(id);
 
@@ -19,7 +20,7 @@ export async function GET(request, { params }) {
 // POST /api/posts/:id/comments - 需要认证
 // Header: Authorization: Bearer <token> 或 ApiKey <key>
 // Body: { content }
-export async function POST(request, { params }) {
+async function handlePOST(request, { params }) {
   const rateLimited = rateLimit(request, 'write');
   if (rateLimited) return rateLimited;
 
@@ -68,3 +69,6 @@ export async function POST(request, { params }) {
 
   return NextResponse.json(comment, { status: 201 });
 }
+
+export const GET = withLogging(handleGET, 'posts');
+export const POST = withLogging(handlePOST, 'posts');

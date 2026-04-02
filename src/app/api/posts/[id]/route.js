@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getPostById, incrementViews, updatePost, deletePost } from '@/data/posts';
 import { authenticate, authError } from '@/lib/middleware';
+import { withLogging } from '@/lib/apiLogger';
 
 // GET /api/posts/:id
-export async function GET(request, { params }) {
+async function handleGET(request, { params }) {
   const id = parseInt(params.id);
   const post = getPostById(id);
 
@@ -17,7 +18,7 @@ export async function GET(request, { params }) {
 }
 
 // PATCH /api/posts/:id - 编辑帖子（仅作者或管理员）
-export async function PATCH(request, { params }) {
+async function handlePATCH(request, { params }) {
   const auth = authenticate(request);
   if (auth.error) return authError(auth);
 
@@ -37,7 +38,7 @@ export async function PATCH(request, { params }) {
 }
 
 // DELETE /api/posts/:id - 删除帖子（仅作者或管理员）
-export async function DELETE(request, { params }) {
+async function handleDELETE(request, { params }) {
   const auth = authenticate(request);
   if (auth.error) return authError(auth);
 
@@ -54,3 +55,7 @@ export async function DELETE(request, { params }) {
   deletePost(id);
   return NextResponse.json({ message: '帖子已删除' });
 }
+
+export const GET = withLogging(handleGET, 'posts');
+export const PATCH = withLogging(handlePATCH, 'posts');
+export const DELETE = withLogging(handleDELETE, 'posts');

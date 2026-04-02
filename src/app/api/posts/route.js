@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getAllPosts, createPost, searchPosts } from '@/data/posts';
 import { authenticate, authError, rateLimit } from '@/lib/middleware';
+import { withLogging } from '@/lib/apiLogger';
 
 // GET /api/posts - 公开接口
 // 查询参数: ?page=1&limit=10&diseaseId=2&sort=date|views|replies&search=关键词
-export async function GET(request) {
+async function handleGET(request) {
   const { searchParams } = new URL(request.url);
   const search = searchParams.get('search');
 
@@ -26,7 +27,7 @@ export async function GET(request) {
 // POST /api/posts - 需要认证
 // Header: Authorization: Bearer <token> 或 ApiKey <key>
 // Body: { title, content, diseaseId?, disease? }
-export async function POST(request) {
+async function handlePOST(request) {
   const rateLimited = rateLimit(request, 'write');
   if (rateLimited) return rateLimited;
 
@@ -61,3 +62,6 @@ export async function POST(request) {
   });
   return NextResponse.json(post, { status: 201 });
 }
+
+export const GET = withLogging(handleGET, 'posts');
+export const POST = withLogging(handlePOST, 'posts');

@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getUserById, updateUser } from '@/data/users';
 import { authenticate, authError } from '@/lib/middleware';
+import { withLogging } from '@/lib/apiLogger';
 
 // GET /api/users/:id - 需要认证
-export async function GET(request, { params }) {
+async function handleGET(request, { params }) {
   const auth = authenticate(request);
   if (auth.error) return authError(auth);
 
@@ -19,7 +20,7 @@ export async function GET(request, { params }) {
 
 // PATCH /api/users/:id - 需要认证（只能改自己的，admin可改任何人）
 // Body: { username?, bio?, diseaseIds? }
-export async function PATCH(request, { params }) {
+async function handlePATCH(request, { params }) {
   const auth = authenticate(request);
   if (auth.error) return authError(auth);
 
@@ -38,3 +39,6 @@ export async function PATCH(request, { params }) {
 
   return NextResponse.json(user);
 }
+
+export const GET = withLogging(handleGET, 'users');
+export const PATCH = withLogging(handlePATCH, 'users');

@@ -3,6 +3,7 @@ import { getAllPosts, getPostById, createPost, addComment, toggleLike, searchPos
 import { getAllUsers, getUserById } from '@/data/users';
 import { getAllNews, getNewsById } from '@/data/news';
 import { getNotifications, markAsRead } from '@/data/notifications';
+import { getAnalyticsSummary, getRequestsByEndpoint } from '@/data/analytics';
 import { getDb } from '@/lib/db';
 
 function ok(text) {
@@ -260,6 +261,25 @@ export function registerTools(server, authContext = null) {
         return ok(notificationIds ? `已标记 ${notificationIds.length} 条通知为已读。` : '已将所有通知标记为已读。');
       } catch (e) {
         return err(`操作失败: ${e.message}`);
+      }
+    }
+  );
+
+  // ====== get_api_analytics ======
+  server.tool(
+    'get_api_analytics',
+    'Get API usage analytics summary (total requests, error rate, top endpoints)',
+    { days: z.number().optional().describe('Number of days to analyze (default 7)') },
+    async ({ days = 7 }) => {
+      try {
+        const summary = getAnalyticsSummary();
+        const byEndpoint = getRequestsByEndpoint(days);
+
+        const endpointLines = byEndpoint.map(e => `  ${e.endpoint}: ${e.count} 次`).join('\n');
+
+        return ok(`API 使用统计：\n  总请求: ${summary.total}\n  今日: ${summary.today}\n  错误率: ${summary.errorRate}%\n  平均响应: ${summary.avgResponseMs}ms\n\n按端点（${days}天）：\n${endpointLines || '  暂无数据'}`);
+      } catch (e) {
+        return err(`获取分析数据失败: ${e.message}`);
       }
     }
   );

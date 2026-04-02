@@ -8,9 +8,12 @@ function getStats() {
     const users = db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
     const diseases = db.prepare('SELECT COUNT(*) AS c FROM diseases').get().c;
     const posts = db.prepare('SELECT COUNT(*) AS c FROM posts').get().c;
-    return { users, diseases, posts };
+    const totalViews = db.prepare('SELECT COALESCE(SUM(views),0) AS c FROM posts').get().c;
+    let apiCalls = 0;
+    try { apiCalls = db.prepare('SELECT COUNT(*) AS c FROM api_logs').get().c; } catch { /* table may not exist */ }
+    return { users, diseases, posts, totalViews, apiCalls };
   } catch {
-    return { users: 1200, diseases: 50, posts: 3500 };
+    return { users: 1200, diseases: 50, posts: 3500, totalViews: 0, apiCalls: 0 };
   }
 }
 
@@ -51,19 +54,27 @@ export default function HomePage() {
         </section>
 
         {/* Stats Section */}
-        <section className="relative z-10 max-w-4xl mx-auto px-4 pb-24">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-surface-800 border border-surface-600 rounded-2xl p-8 text-center">
-              <p className="text-3xl md:text-4xl font-bold text-white mb-2">{stats.users.toLocaleString()}+</p>
+        <section className="relative z-10 max-w-5xl mx-auto px-4 pb-24">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="bg-surface-800 border border-surface-600 rounded-2xl p-6 text-center">
+              <p className="text-2xl md:text-3xl font-bold text-white mb-2">{stats.users.toLocaleString()}+</p>
               <p className="text-gray-500 text-sm">注册患者</p>
             </div>
-            <div className="bg-surface-800 border border-surface-600 rounded-2xl p-8 text-center">
-              <p className="text-3xl md:text-4xl font-bold text-primary-400 mb-2">{stats.diseases}</p>
+            <div className="bg-surface-800 border border-surface-600 rounded-2xl p-6 text-center">
+              <p className="text-2xl md:text-3xl font-bold text-primary-400 mb-2">{stats.diseases}</p>
               <p className="text-gray-500 text-sm">收录病种</p>
             </div>
-            <div className="bg-surface-800 border border-surface-600 rounded-2xl p-8 text-center">
-              <p className="text-3xl md:text-4xl font-bold text-white mb-2">{stats.posts.toLocaleString()}+</p>
+            <div className="bg-surface-800 border border-surface-600 rounded-2xl p-6 text-center">
+              <p className="text-2xl md:text-3xl font-bold text-white mb-2">{stats.posts.toLocaleString()}+</p>
               <p className="text-gray-500 text-sm">社区讨论</p>
+            </div>
+            <div className="bg-surface-800 border border-surface-600 rounded-2xl p-6 text-center">
+              <p className="text-2xl md:text-3xl font-bold text-sky-400 mb-2">{stats.apiCalls.toLocaleString()}</p>
+              <p className="text-gray-500 text-sm">API 调用</p>
+            </div>
+            <div className="bg-surface-800 border border-surface-600 rounded-2xl p-6 text-center col-span-2 md:col-span-1">
+              <p className="text-2xl md:text-3xl font-bold text-emerald-400 mb-2">{stats.totalViews.toLocaleString()}</p>
+              <p className="text-gray-500 text-sm">帖子浏览</p>
             </div>
           </div>
         </section>

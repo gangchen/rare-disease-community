@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { withLogging } from '@/lib/apiLogger';
 
 // GET /api/stats
 // 直接用 SQL 聚合，更高效
-export async function GET() {
+async function handleGET() {
   const db = getDb();
 
   const userCount = db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
@@ -23,6 +24,11 @@ export async function GET() {
     'SELECT COUNT(*) AS c FROM posts WHERE created_at >= ?'
   ).get(oneWeekAgo).c;
 
+  let apiCalls = 0;
+  try {
+    apiCalls = db.prepare('SELECT COUNT(*) AS c FROM api_logs').get().c;
+  } catch { /* table may not exist */ }
+
   return NextResponse.json({
     users: userCount,
     diseases: diseaseCount,
@@ -31,7 +37,10 @@ export async function GET() {
     news: newsCount,
     totalMembers,
     totalPostViews,
+    apiCalls,
     topDiseases,
     recentActivity: { postsThisWeek },
   });
 }
+
+export const GET = withLogging(handleGET, 'stats');

@@ -141,6 +141,35 @@ db.exec(`
   );
 
   CREATE INDEX idx_notifications_user ON notifications(user_id, is_read, created_at DESC);
+
+  CREATE TABLE api_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    method TEXT NOT NULL,
+    path TEXT NOT NULL,
+    endpoint TEXT NOT NULL,
+    status INTEGER NOT NULL,
+    response_time_ms INTEGER NOT NULL,
+    api_key_id TEXT,
+    user_id INTEGER,
+    ip TEXT,
+    error_message TEXT,
+    created_at TEXT NOT NULL
+  );
+
+  CREATE INDEX idx_api_logs_created ON api_logs(created_at DESC);
+  CREATE INDEX idx_api_logs_endpoint ON api_logs(endpoint, created_at);
+  CREATE INDEX idx_api_logs_status ON api_logs(status);
+  CREATE INDEX idx_api_logs_api_key ON api_logs(api_key_id);
+
+  CREATE TABLE api_stats_daily (
+    date TEXT NOT NULL,
+    endpoint TEXT NOT NULL,
+    total_requests INTEGER DEFAULT 0,
+    success_count INTEGER DEFAULT 0,
+    error_count INTEGER DEFAULT 0,
+    avg_response_ms INTEGER DEFAULT 0,
+    PRIMARY KEY (date, endpoint)
+  );
 `);
 
 console.log('数据库表创建完成');

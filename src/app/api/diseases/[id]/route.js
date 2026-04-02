@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getDiseaseById } from '@/data/diseases';
+import { withLogging } from '@/lib/apiLogger';
 
 // GET /api/diseases/:id
-export async function GET(request, { params }) {
+async function handleGET(request, { params }) {
   const id = parseInt(params.id);
   const disease = getDiseaseById(id);
 
@@ -12,3 +13,5 @@ export async function GET(request, { params }) {
 
   return NextResponse.json(disease);
 }
+
+export const GET = withLogging(handleGET, 'diseases');

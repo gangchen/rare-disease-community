@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { generateApiKey, listApiKeys, revokeApiKey } from '@/lib/auth';
 import { authenticate, requireRole, authError } from '@/lib/middleware';
+import { withLogging } from '@/lib/apiLogger';
 
 // GET /api/auth/apikeys - 列出当前用户的 API Keys
-export async function GET(request) {
+async function handleGET(request) {
   const auth = authenticate(request);
   if (auth.error) return authError(auth);
 
@@ -13,7 +14,7 @@ export async function GET(request) {
 
 // POST /api/auth/apikeys - 创建新的 API Key
 // Body: { name: "my-agent" }
-export async function POST(request) {
+async function handlePOST(request) {
   const auth = authenticate(request);
   if (auth.error) return authError(auth);
 
@@ -39,7 +40,7 @@ export async function POST(request) {
 
 // DELETE /api/auth/apikeys - 撤销 API Key
 // Body: { key: "rdc_..." }
-export async function DELETE(request) {
+async function handleDELETE(request) {
   const auth = authenticate(request);
   if (auth.error) return authError(auth);
 
@@ -57,3 +58,7 @@ export async function DELETE(request) {
 
   return NextResponse.json({ message: 'API Key 已撤销' });
 }
+
+export const GET = withLogging(handleGET, 'auth');
+export const POST = withLogging(handlePOST, 'auth');
+export const DELETE = withLogging(handleDELETE, 'auth');

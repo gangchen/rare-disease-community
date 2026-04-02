@@ -1,7 +1,8 @@
 import { getAllNews } from '@/data/news';
 import { NextResponse } from 'next/server';
+import { withLogging } from '@/lib/apiLogger';
 
-export async function GET(request) {
+async function handleGET(request) {
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '10');
@@ -10,3 +11,5 @@ export async function GET(request) {
   const result = getAllNews({ page, limit, category });
   return NextResponse.json(result);
 }
+
+export const GET = withLogging(handleGET, 'news');
