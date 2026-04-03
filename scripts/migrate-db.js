@@ -187,6 +187,34 @@ if (!existingTables.includes('api_stats_daily')) {
   migrated++;
 }
 
+// --- 帖子分类修正 ---
+// Reclassify posts still on default 'topic' using keyword matching
+{
+  const uncategorized = db.prepare("SELECT id, title, content FROM posts WHERE category = 'topic'").all();
+  if (uncategorized.length > 0) {
+    const update = db.prepare("UPDATE posts SET category = ? WHERE id = ?");
+    let reclassified = 0;
+
+    const questionRe = /如何|怎么|怎样|请问|求助|有没有|能不能|是否|哪里|什么|为什么|\?|？/;
+    const experienceRe = /经验|分享|经历|心得|总结|指南|攻略|记录|体会|方法|技巧|我的|我家|康复|护理|治疗经历|用药/;
+
+    for (const post of uncategorized) {
+      const text = `${post.title} ${post.content}`;
+      let cat = 'topic';
+      if (questionRe.test(text)) cat = 'question';
+      else if (experienceRe.test(text)) cat = 'experience';
+      if (cat !== 'topic') {
+        update.run(cat, post.id);
+        reclassified++;
+      }
+    }
+    if (reclassified > 0) {
+      console.log(`✓ 重新分类 ${reclassified} 个帖子`);
+      migrated++;
+    }
+  }
+}
+
 // --- 未来的迁移在这里追加 ---
 // if (!existingTables.includes('xxx')) { ... }
 

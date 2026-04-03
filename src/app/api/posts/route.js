@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAllPosts, createPost, searchPosts } from '@/data/posts';
 import { authenticate, authError, rateLimit } from '@/lib/middleware';
 import { withLogging } from '@/lib/apiLogger';
+import { classifyPost } from '@/lib/classifier';
 
 // GET /api/posts - 公开接口
 // 查询参数: ?page=1&limit=10&diseaseId=2&sort=date|views|replies&search=关键词
@@ -52,7 +53,9 @@ async function handlePOST(request) {
   }
 
   const validCategories = ['topic', 'experience', 'question'];
-  const category = validCategories.includes(body.category) ? body.category : 'topic';
+  const category = validCategories.includes(body.category)
+    ? body.category
+    : await classifyPost(title, content);
 
   const post = createPost({
     ...body,
