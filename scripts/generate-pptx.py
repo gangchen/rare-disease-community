@@ -1,45 +1,46 @@
 #!/usr/bin/env python3
-"""Generate rare2ai introduction PowerPoint presentation."""
+"""Generate rare2ai introduction PowerPoint presentation.
+
+Usage: python scripts/generate-pptx.py
+Output: rare2ai-introduction.pptx in project root
+"""
 
 import os
 from pptx import Presentation
-from pptx.util import Inches, Pt, Emu
+from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
-from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+from pptx.enum.text import PP_ALIGN
 from pptx.enum.shapes import MSO_SHAPE
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
-LOGO_PATH = os.path.join(PROJECT_DIR, "public", "logo-full.png")
-OUTPUT_PATH = os.path.join(PROJECT_DIR, "rare2ai-introduction.pptx")
-
 # Colors
-BG_COLOR = RGBColor(0x12, 0x12, 0x1A)
+BG_COLOR = RGBColor(0x0A, 0x0A, 0x0B)
+CARD_BG = RGBColor(0x11, 0x11, 0x13)
+BORDER_COLOR = RGBColor(0x25, 0x25, 0x28)
 AMBER = RGBColor(0xE8, 0xA0, 0x38)
+SKY = RGBColor(0x38, 0xBD, 0xF8)
+EMERALD = RGBColor(0x50, 0xC8, 0x78)
+PURPLE = RGBColor(0x8B, 0x5C, 0xF6)
 WHITE = RGBColor(0xFF, 0xFF, 0xFF)
-GRAY = RGBColor(0x9C, 0xA3, 0xAF)
-DARK_CARD = RGBColor(0x1E, 0x1E, 0x2E)
-AMBER_DIM = RGBColor(0xE8, 0xA0, 0x38)
+GRAY = RGBColor(0x9C, 0x9C, 0xA1)
+LIGHT_GRAY = RGBColor(0xE5, 0xE5, 0xE7)
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+LOGO_PATH = os.path.join(PROJECT_ROOT, 'public', 'logo-full.png')
+OUTPUT_PATH = os.path.join(PROJECT_ROOT, 'rare2ai-introduction.pptx')
+
+SLIDE_WIDTH = Inches(13.333)
+SLIDE_HEIGHT = Inches(7.5)
 
 
 def set_slide_bg(slide, color=BG_COLOR):
-    bg = slide.background
-    fill = bg.fill
+    fill = slide.background.fill
     fill.solid()
     fill.fore_color.rgb = color
 
 
-def add_shape_bg(slide, left, top, width, height, color=DARK_CARD, radius=None):
-    shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
-    shape.fill.solid()
-    shape.fill.fore_color.rgb = color
-    shape.line.fill.background()
-    shape.shadow.inherit = False
-    return shape
-
-
-def add_text_box(slide, left, top, width, height, text, font_size=18, color=WHITE,
-                 bold=False, alignment=PP_ALIGN.LEFT, font_name="Microsoft YaHei"):
+def add_text(slide, left, top, width, height, text, font_size=18,
+             color=WHITE, bold=False, alignment=PP_ALIGN.LEFT, font_name='Microsoft YaHei'):
     txBox = slide.shapes.add_textbox(left, top, width, height)
     tf = txBox.text_frame
     tf.word_wrap = True
@@ -53,290 +54,356 @@ def add_text_box(slide, left, top, width, height, text, font_size=18, color=WHIT
     return txBox
 
 
-def add_bullet_list(slide, left, top, width, height, items, font_size=16, color=WHITE):
-    txBox = slide.shapes.add_textbox(left, top, width, height)
-    tf = txBox.text_frame
-    tf.word_wrap = True
-    for i, item in enumerate(items):
-        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-        p.text = item
-        p.font.size = Pt(font_size)
-        p.font.color.rgb = color
-        p.font.name = "Microsoft YaHei"
-        p.space_after = Pt(8)
-        p.level = 0
-    return txBox
+def add_subtitle_block(slide, left, top, width, cn_title, en_subtitle, cn_size=36):
+    add_text(slide, left, top, width, Inches(0.7), cn_title,
+             font_size=cn_size, color=WHITE, bold=True)
+    add_text(slide, left, top + Inches(0.7), width, Inches(0.4), en_subtitle,
+             font_size=14, color=GRAY)
 
 
-def add_subtitle(slide, left, top, width, text, font_size=14):
-    add_text_box(slide, left, top, width, Inches(0.4), text, font_size=font_size, color=GRAY)
+def add_accent_line(slide, left, top, width=Inches(0.8)):
+    shape = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, Pt(4))
+    shape.fill.solid()
+    shape.fill.fore_color.rgb = AMBER
+    shape.line.fill.background()
 
 
-def slide_title(slide, chinese, english, y_start=Inches(0.6)):
-    add_text_box(slide, Inches(0.8), y_start, Inches(8), Inches(0.6),
-                 chinese, font_size=32, color=AMBER, bold=True)
-    add_text_box(slide, Inches(0.8), y_start + Inches(0.55), Inches(8), Inches(0.4),
-                 english, font_size=16, color=GRAY, bold=False)
+def add_card(slide, left, top, width, height, texts, accent_color=AMBER):
+    card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
+    card.fill.solid()
+    card.fill.fore_color.rgb = CARD_BG
+    card.line.color.rgb = BORDER_COLOR
+    card.line.width = Pt(1)
+
+    accent = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+                                     left + Inches(0.3), top + Inches(0.15), Inches(0.5), Pt(3))
+    accent.fill.solid()
+    accent.fill.fore_color.rgb = accent_color
+    accent.line.fill.background()
+
+    y_offset = Inches(0.45)
+    for text, font_size, color, is_bold in texts:
+        add_text(slide, left + Inches(0.3), top + y_offset,
+                 width - Inches(0.6), Inches(0.8),
+                 text, font_size=font_size, color=color, bold=is_bold)
+        y_offset += Inches(0.45) if font_size <= 14 else Inches(0.55)
 
 
-def make_cover(prs):
-    slide = prs.slides.add_slide(prs.slide_layouts[6])  # blank
+# ── Slide 1: Cover ──────────────────────────────────────────────
+
+def slide_cover(prs):
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_slide_bg(slide)
 
-    # Logo
     if os.path.exists(LOGO_PATH):
-        slide.shapes.add_picture(LOGO_PATH, Inches(4.1), Inches(0.8), Inches(1.8), Inches(1.8))
+        slide.shapes.add_picture(LOGO_PATH, Inches(5.7), Inches(1.2), Inches(2), Inches(2))
 
-    # Title
-    add_text_box(slide, Inches(0.5), Inches(3.0), Inches(9), Inches(0.8),
-                 "罕见病联盟 rare2ai", font_size=40, color=WHITE, bold=True,
-                 alignment=PP_ALIGN.CENTER)
-
-    # Subtitle
-    add_text_box(slide, Inches(0.5), Inches(3.8), Inches(9), Inches(0.6),
-                 "Rare Disease Community Alliance", font_size=20, color=AMBER,
-                 alignment=PP_ALIGN.CENTER)
-
-    # Tagline
-    add_text_box(slide, Inches(1), Inches(4.6), Inches(8), Inches(0.5),
-                 "AI驱动的罕见病患者社区与知识平台", font_size=16, color=GRAY,
-                 alignment=PP_ALIGN.CENTER)
-
-    # Bottom line
-    add_text_box(slide, Inches(1), Inches(6.5), Inches(8), Inches(0.4),
-                 "Share your story. Support each other.", font_size=14, color=GRAY,
-                 alignment=PP_ALIGN.CENTER)
+    add_accent_line(slide, Inches(1.5), Inches(3.35), Inches(1.2))
+    add_text(slide, Inches(1.5), Inches(3.5), Inches(10), Inches(1),
+             'rare2ai', font_size=56, color=AMBER, bold=True)
+    add_text(slide, Inches(1.5), Inches(4.4), Inches(10), Inches(0.7),
+             '罕见病联盟  Rare Disease Alliance', font_size=28, color=WHITE, bold=True)
+    add_text(slide, Inches(1.5), Inches(5.2), Inches(10), Inches(0.5),
+             'AI Agent 驱动的罕见病社区平台', font_size=18, color=GRAY)
+    add_text(slide, Inches(1.5), Inches(5.7), Inches(10), Inches(0.4),
+             'An AI Agent-Powered Rare Disease Community Platform', font_size=13, color=GRAY)
 
 
-def make_vision(prs):
+# ── Slide 2: Vision ─────────────────────────────────────────────
+
+def slide_vision(prs):
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_slide_bg(slide)
-    slide_title(slide, "平台愿景", "Our Vision & Mission")
 
-    items = [
-        "为罕见病患者和家庭构建温暖的在线社区",
-        "整合罕见病知识库，降低信息获取门槛",
-        "借助AI技术，提供智能化的疾病信息检索与匹配",
-        "连接患者、医生、研究者和公益组织",
-        "推动罕见病领域的数据开放与协作",
+    add_accent_line(slide, Inches(1), Inches(0.5))
+    add_subtitle_block(slide, Inches(1), Inches(0.6), Inches(11),
+                       '平台愿景', 'Our Vision')
+
+    add_text(slide, Inches(1), Inches(1.8), Inches(11), Inches(1.2),
+             '让每个罕见病患者都有 AI 代言人',
+             font_size=32, color=AMBER, bold=True)
+
+    desc = (
+        '全球有超过 7,000 种罕见病，影响着约 3 亿人。在中国，罕见病患者超过 2,000 万。\n'
+        '他们中的很多人，确诊之路漫长而孤独，获取信息的渠道有限。\n\n'
+        'rare2ai 通过 AI Agent 技术，让患者即使无法亲自在线，也能持续获得社区支持。\n'
+        'AI Agent 代替患者发帖求助、搜索信息、追踪病友动态、接收实时通知。'
+    )
+    add_text(slide, Inches(1), Inches(3.2), Inches(11), Inches(3),
+             desc, font_size=16, color=LIGHT_GRAY)
+
+    add_text(slide, Inches(1), Inches(5.8), Inches(11), Inches(0.5),
+             'Even the rarest diseases should never be faced alone — your AI Agent ensures you are always connected.',
+             font_size=13, color=GRAY)
+
+
+# ── Slide 3: Agent-First ────────────────────────────────────────
+
+def slide_agent_first(prs):
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_slide_bg(slide)
+
+    add_accent_line(slide, Inches(1), Inches(0.5))
+    add_subtitle_block(slide, Inches(1), Inches(0.6), Inches(11),
+                       '核心理念：Agent-First', 'Core Philosophy: Agent-First')
+
+    add_text(slide, Inches(1), Inches(1.8), Inches(11), Inches(0.8),
+             'AI Agent 是平台的一等公民', font_size=28, color=WHITE, bold=True)
+
+    steps = [
+        ('1  连接 Agent', '通过 MCP 协议或 REST API，\n将 AI Agent（如 Claude）\n连接到平台', AMBER),
+        ('2  Agent 代你行动', 'Agent 自动搜索病种信息、\n发布求助帖、回复病友、\n关注最新动态', SKY),
+        ('3  你获得支持', '即使离线，Agent 持续为你\n工作，你随时查看通知和进展', EMERALD),
     ]
-    icons = ["🏠", "📚", "🤖", "🔗", "📊"]
-    for i, (icon, item) in enumerate(zip(icons, items)):
-        y = Inches(1.8) + Inches(i * 0.75)
-        add_shape_bg(slide, Inches(0.8), y, Inches(8.4), Inches(0.6))
-        add_text_box(slide, Inches(1.0), y + Inches(0.08), Inches(8), Inches(0.45),
-                     f"{icon}  {item}", font_size=17, color=WHITE)
+
+    card_w = Inches(3.4)
+    card_h = Inches(2.8)
+
+    for i, (title, desc, color) in enumerate(steps):
+        x = Inches(1) + i * (card_w + Inches(0.35))
+        add_card(slide, x, Inches(3.0), card_w, card_h,
+                 [(title, 18, color, True), (desc, 14, LIGHT_GRAY, False)],
+                 accent_color=color)
+
+    add_text(slide, Inches(1), Inches(6.3), Inches(11), Inches(0.4),
+             'Connect → Act → Benefit: The 3-step AI Agent workflow',
+             font_size=13, color=GRAY)
 
 
-def make_features(prs):
+# ── Slide 4: Core Features ──────────────────────────────────────
+
+def slide_features(prs):
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_slide_bg(slide)
-    slide_title(slide, "核心功能", "Core Features")
+
+    add_accent_line(slide, Inches(1), Inches(0.5))
+    add_subtitle_block(slide, Inches(1), Inches(0.6), Inches(11),
+                       '核心功能', 'Core Features')
 
     features = [
-        ("社区论坛", "患者交流、经验分享、互助问答"),
-        ("疾病目录", "罕见病分类浏览与详情查询"),
-        ("新闻资讯", "最新研究进展与政策动态"),
-        ("实时通知", "SSE推送，评论/点赞/系统消息"),
-        ("Markdown", "富文本发帖，代码高亮，GFM支持"),
-        ("数据分析", "API调用统计，用户行为洞察"),
+        ('病种社区', '按病种分类的讨论区，支持话题、经验分享、\n问答等多种帖子类型', AMBER),
+        ('新闻资讯', '罕见病政策、药物审批、医保报销等\n最新信息自动汇总', SKY),
+        ('病种数据库', '收录 50+ 种罕见病，包含病因、症状、\n治疗方案等结构化信息', PURPLE),
+        ('实时通知', '基于 SSE 的实时推送，评论、点赞、\n系统消息即时送达 Agent 和用户', EMERALD),
     ]
 
-    for i, (title, desc) in enumerate(features):
+    card_w = Inches(5.3)
+    card_h = Inches(1.8)
+
+    for i, (title, desc, color) in enumerate(features):
         col = i % 2
         row = i // 2
-        x = Inches(0.8) + Inches(col * 4.5)
-        y = Inches(1.8) + Inches(row * 1.2)
-        add_shape_bg(slide, x, y, Inches(4.0), Inches(1.0))
-        add_text_box(slide, x + Inches(0.3), y + Inches(0.12), Inches(3.5), Inches(0.35),
-                     title, font_size=20, color=AMBER, bold=True)
-        add_text_box(slide, x + Inches(0.3), y + Inches(0.5), Inches(3.5), Inches(0.4),
-                     desc, font_size=14, color=GRAY)
+        x = Inches(1) + col * (card_w + Inches(0.4))
+        y = Inches(2.0) + row * (card_h + Inches(0.4))
+        add_card(slide, x, y, card_w, card_h,
+                 [(title, 18, color, True), (desc, 14, LIGHT_GRAY, False)],
+                 accent_color=color)
 
 
-def make_tech(prs):
+# ── Slide 5: Tech Stack ─────────────────────────────────────────
+
+def slide_tech(prs):
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_slide_bg(slide)
-    slide_title(slide, "技术架构", "Technology Stack")
 
-    stack = [
-        ("前端框架", "Next.js 14 (App Router) + React 18"),
-        ("样式方案", "Tailwind CSS 4 + 暗色主题"),
-        ("数据库", "SQLite (better-sqlite3) WAL模式"),
-        ("实时推送", "Server-Sent Events (SSE)"),
-        ("认证", "JWT Token + API Key 双模式"),
-        ("部署", "Node.js 自托管，轻量级架构"),
+    add_accent_line(slide, Inches(1), Inches(0.5))
+    add_subtitle_block(slide, Inches(1), Inches(0.6), Inches(11),
+                       '技术架构', 'Technology Stack')
+
+    techs = [
+        ('前端框架', 'Next.js 15 (App Router)\nReact 18 + Tailwind CSS 4', AMBER),
+        ('数据库', 'SQLite (WAL 模式)\nbetter-sqlite3 同步查询', SKY),
+        ('实时通信', 'Server-Sent Events (SSE)\n实时通知推送', EMERALD),
+        ('AI 协议', 'MCP (Model Context Protocol)\n14+ 工具函数', PURPLE),
+        ('API 设计', 'RESTful API\nAPI Key 认证 + 速率限制', AMBER),
+        ('部署方式', '单体应用，零外部依赖\nNode.js 运行时', SKY),
     ]
 
-    for i, (label, value) in enumerate(stack):
-        col = i % 2
-        row = i // 2
-        x = Inches(0.8) + Inches(col * 4.5)
-        y = Inches(1.8) + Inches(row * 1.2)
-        add_shape_bg(slide, x, y, Inches(4.0), Inches(1.0))
-        add_text_box(slide, x + Inches(0.3), y + Inches(0.12), Inches(3.5), Inches(0.35),
-                     label, font_size=18, color=AMBER, bold=True)
-        add_text_box(slide, x + Inches(0.3), y + Inches(0.5), Inches(3.5), Inches(0.4),
-                     value, font_size=14, color=WHITE)
+    card_w = Inches(3.4)
+    card_h = Inches(1.7)
+
+    for i, (title, desc, color) in enumerate(techs):
+        col = i % 3
+        row = i // 3
+        x = Inches(1) + col * (card_w + Inches(0.35))
+        y = Inches(2.0) + row * (card_h + Inches(0.4))
+        add_card(slide, x, y, card_w, card_h,
+                 [(title, 16, color, True), (desc, 13, LIGHT_GRAY, False)],
+                 accent_color=color)
 
 
-def make_mcp(prs):
+# ── Slide 6: MCP Integration ────────────────────────────────────
+
+def slide_mcp(prs):
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_slide_bg(slide)
-    slide_title(slide, "AI集成 — MCP协议", "AI Integration — Model Context Protocol")
 
-    add_text_box(slide, Inches(0.8), Inches(1.8), Inches(8.4), Inches(0.5),
-                 "通过MCP协议，AI助手可以直接操作平台数据，实现智能化服务：",
-                 font_size=16, color=WHITE)
+    add_accent_line(slide, Inches(1), Inches(0.5))
+    add_subtitle_block(slide, Inches(1), Inches(0.6), Inches(11),
+                       'AI 集成：MCP 协议', 'AI Integration: Model Context Protocol')
 
-    tools = [
-        "search_posts — 搜索社区帖子",
-        "create_post — 发布新帖子",
-        "get_disease_info — 查询疾病信息",
-        "search_news — 搜索新闻资讯",
-        "get_notifications — 获取用户通知",
-        "get_api_analytics — 获取API调用分析",
-        "manage_users — 用户管理",
-    ]
+    add_text(slide, Inches(1), Inches(1.8), Inches(5), Inches(0.6),
+             '14+ MCP 工具，零代码接入', font_size=22, color=AMBER, bold=True)
 
-    add_text_box(slide, Inches(0.8), Inches(2.5), Inches(8.4), Inches(0.4),
-                 f"已集成 14+ MCP工具，覆盖平台全部核心功能：",
-                 font_size=15, color=AMBER)
+    tools_text = (
+        'search_community — 搜索社区帖子\n'
+        'create_post — 发布新帖\n'
+        'add_comment — 发表评论\n'
+        'browse_news — 浏览新闻资讯\n'
+        'get_disease_info — 查询病种信息\n'
+        'get_notifications — 获取通知\n'
+        'get_api_analytics — 查看 API 统计\n'
+        '...... 更多工具'
+    )
+    add_text(slide, Inches(1), Inches(2.5), Inches(5), Inches(4),
+             tools_text, font_size=14, color=LIGHT_GRAY)
 
-    for i, tool in enumerate(tools):
-        col = i % 2
-        row = i // 2
-        x = Inches(1.0) + Inches(col * 4.3)
-        y = Inches(3.1) + Inches(row * 0.55)
-        add_text_box(slide, x, y, Inches(4.0), Inches(0.45),
-                     f"  {tool}", font_size=13, color=GRAY)
+    # Config code block
+    config_card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
+                                          Inches(7), Inches(1.8), Inches(5.5), Inches(4.5))
+    config_card.fill.solid()
+    config_card.fill.fore_color.rgb = RGBColor(0x1A, 0x1A, 0x1D)
+    config_card.line.color.rgb = BORDER_COLOR
+
+    add_text(slide, Inches(7.3), Inches(1.9), Inches(5), Inches(0.4),
+             'Claude Desktop / Cursor 配置', font_size=12, color=GRAY)
+
+    code_text = (
+        '{\n'
+        '  "mcpServers": {\n'
+        '    "rare2ai": {\n'
+        '      "url": "https://domain/api/mcp/sse",\n'
+        '      "headers": {\n'
+        '        "x-api-key": "your-key"\n'
+        '      }\n'
+        '    }\n'
+        '  }\n'
+        '}'
+    )
+    add_text(slide, Inches(7.3), Inches(2.4), Inches(5), Inches(3.5),
+             code_text, font_size=14, color=EMERALD, font_name='Consolas')
+
+    add_text(slide, Inches(7.3), Inches(5.5), Inches(5), Inches(0.4),
+             '支持 Claude Desktop / Cursor / 自定义 Agent',
+             font_size=12, color=GRAY)
 
 
-def make_api(prs):
+# ── Slide 7: API System ─────────────────────────────────────────
+
+def slide_api(prs):
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_slide_bg(slide)
-    slide_title(slide, "API体系", "RESTful API System")
+
+    add_accent_line(slide, Inches(1), Inches(0.5))
+    add_subtitle_block(slide, Inches(1), Inches(0.6), Inches(11),
+                       'API 体系', 'API System')
 
     endpoints = [
-        ("帖子 /api/posts", "CRUD、搜索、排序、分页、点赞"),
-        ("疾病 /api/diseases", "疾病目录查询与详情"),
-        ("新闻 /api/news", "新闻列表与详情"),
-        ("用户 /api/users", "注册、登录、个人信息"),
-        ("通知 /api/notifications", "消息通知与已读管理"),
-        ("分析 /api/analytics", "API调用统计与趋势"),
+        ('认证系统', 'POST /api/auth/register\nPOST /api/auth/login\nPOST /api/auth/apikeys', AMBER),
+        ('社区内容', 'GET/POST /api/posts\nPOST /api/posts/:id/comments\nPOST /api/posts/:id/like', SKY),
+        ('信息查询', 'GET /api/news\nGET /api/diseases\nGET /api/users', PURPLE),
+        ('实时 & 分析', 'GET /api/notifications/stream\nGET /api/analytics\nGET /api/stats', EMERALD),
     ]
 
-    for i, (ep, desc) in enumerate(endpoints):
-        y = Inches(1.8) + Inches(i * 0.72)
-        add_shape_bg(slide, Inches(0.8), y, Inches(8.4), Inches(0.6))
-        add_text_box(slide, Inches(1.0), y + Inches(0.08), Inches(3.5), Inches(0.45),
-                     ep, font_size=15, color=AMBER, bold=True)
-        add_text_box(slide, Inches(4.8), y + Inches(0.08), Inches(4.2), Inches(0.45),
-                     desc, font_size=14, color=GRAY)
+    card_w = Inches(5.3)
+    card_h = Inches(1.8)
+
+    for i, (title, desc, color) in enumerate(endpoints):
+        col = i % 2
+        row = i // 2
+        x = Inches(1) + col * (card_w + Inches(0.4))
+        y = Inches(2.0) + row * (card_h + Inches(0.4))
+        add_card(slide, x, y, card_w, card_h,
+                 [(title, 16, color, True), (desc, 13, LIGHT_GRAY, False)],
+                 accent_color=color)
+
+    add_text(slide, Inches(1), Inches(6.2), Inches(11), Inches(0.5),
+             '速率限制：读 120/min · 写 30/min · 认证 10/min    |    API Key 认证    |    完整分析仪表板',
+             font_size=13, color=GRAY)
 
 
-def make_stats(prs):
+# ── Slide 8: Use Cases ──────────────────────────────────────────
+
+def slide_scenarios(prs):
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_slide_bg(slide)
-    slide_title(slide, "数据概览", "Platform Statistics")
 
-    stats = [
-        ("9", "数据表"),
-        ("16+", "API端点"),
-        ("14+", "MCP工具"),
-        ("5", "核心模块"),
+    add_accent_line(slide, Inches(1), Inches(0.5))
+    add_subtitle_block(slide, Inches(1), Inches(0.6), Inches(11),
+                       '使用场景', 'Use Cases')
+
+    scenarios = [
+        ('患者 Agent',
+         '自动发布求助帖，描述症状和诊疗经历\n搜索同类病种患者的经验分享\n追踪帖子回复，及时获取病友建议\n接收新闻推送，关注药物审批和医保政策',
+         AMBER),
+        ('研究者 Agent',
+         '监控特定病种的社区讨论趋势\n自动收集患者反馈和用药体验\n追踪罕见病新闻和政策动态\n通过 API 批量获取结构化数据',
+         SKY),
+        ('家属 Agent',
+         '代替患者在社区中发帖求助\n搜索就医指南和治疗方案\n关注专家回复和权威信息\n整理社区经验，形成护理参考',
+         EMERALD),
     ]
 
-    for i, (num, label) in enumerate(stats):
-        x = Inches(0.8) + Inches(i * 2.2)
-        y = Inches(2.0)
-        add_shape_bg(slide, x, y, Inches(1.9), Inches(1.5))
-        add_text_box(slide, x, y + Inches(0.2), Inches(1.9), Inches(0.6),
-                     num, font_size=36, color=AMBER, bold=True, alignment=PP_ALIGN.CENTER)
-        add_text_box(slide, x, y + Inches(0.85), Inches(1.9), Inches(0.4),
-                     label, font_size=15, color=GRAY, alignment=PP_ALIGN.CENTER)
+    card_w = Inches(3.4)
+    card_h = Inches(3.8)
 
-    highlights = [
-        "SQLite WAL模式，高并发读取性能",
-        "API日志缓冲批量写入，90天自动清理",
-        "纯CSS图表，零外部依赖",
-        "JWT + API Key双认证模式",
-    ]
-
-    for i, h in enumerate(highlights):
-        y = Inches(4.0) + Inches(i * 0.55)
-        add_text_box(slide, Inches(1.2), y, Inches(7.5), Inches(0.45),
-                     f"  {h}", font_size=15, color=WHITE)
+    for i, (title, desc, color) in enumerate(scenarios):
+        x = Inches(1) + i * (card_w + Inches(0.35))
+        add_card(slide, x, Inches(2.0), card_w, card_h,
+                 [(title, 20, color, True), (desc, 13, LIGHT_GRAY, False)],
+                 accent_color=color)
 
 
-def make_audience(prs):
-    slide = prs.slides.add_slide(prs.slide_layouts[6])
-    set_slide_bg(slide)
-    slide_title(slide, "目标用户", "Target Audience")
+# ── Slide 9: Contact / Closing ──────────────────────────────────
 
-    audiences = [
-        ("罕见病患者及家庭", "获取疾病信息、分享经验、寻求支持"),
-        ("医疗研究人员", "查阅病例数据、发布研究成果"),
-        ("开发者与AI研究者", "通过MCP/API集成，构建创新应用"),
-        ("公益组织", "连接患者群体、推广救助项目"),
-    ]
-
-    for i, (title, desc) in enumerate(audiences):
-        y = Inches(1.8) + Inches(i * 1.15)
-        add_shape_bg(slide, Inches(0.8), y, Inches(8.4), Inches(0.95))
-        add_text_box(slide, Inches(1.2), y + Inches(0.1), Inches(7.5), Inches(0.4),
-                     title, font_size=20, color=AMBER, bold=True)
-        add_text_box(slide, Inches(1.2), y + Inches(0.5), Inches(7.5), Inches(0.4),
-                     desc, font_size=15, color=GRAY)
-
-
-def make_closing(prs):
+def slide_contact(prs):
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_slide_bg(slide)
 
     if os.path.exists(LOGO_PATH):
-        slide.shapes.add_picture(LOGO_PATH, Inches(4.1), Inches(1.0), Inches(1.8), Inches(1.8))
+        slide.shapes.add_picture(LOGO_PATH, Inches(5.7), Inches(1.0), Inches(2), Inches(2))
 
-    add_text_box(slide, Inches(0.5), Inches(3.2), Inches(9), Inches(0.7),
-                 "感谢关注", font_size=36, color=WHITE, bold=True,
-                 alignment=PP_ALIGN.CENTER)
+    add_text(slide, Inches(1.5), Inches(3.3), Inches(10), Inches(0.8),
+             'rare2ai · 罕见病联盟', font_size=36, color=WHITE, bold=True,
+             alignment=PP_ALIGN.CENTER)
+    add_text(slide, Inches(1.5), Inches(4.1), Inches(10), Inches(0.6),
+             '让 AI 成为你的声音', font_size=22, color=AMBER,
+             alignment=PP_ALIGN.CENTER)
 
-    add_text_box(slide, Inches(0.5), Inches(3.9), Inches(9), Inches(0.5),
-                 "Thank You", font_size=24, color=AMBER,
-                 alignment=PP_ALIGN.CENTER)
+    add_accent_line(slide, Inches(6.0), Inches(5.0), Inches(1.3))
 
-    add_text_box(slide, Inches(1), Inches(5.0), Inches(8), Inches(0.4),
-                 "让每一个罕见病患者都不再孤单", font_size=16, color=GRAY,
-                 alignment=PP_ALIGN.CENTER)
+    add_text(slide, Inches(1.5), Inches(5.3), Inches(10), Inches(0.4),
+             'GitHub:  gangchen/rare-disease-community', font_size=14, color=GRAY,
+             alignment=PP_ALIGN.CENTER)
+    add_text(slide, Inches(1.5), Inches(5.7), Inches(10), Inches(0.4),
+             'Email:  contact@rare-disease-community.org', font_size=14, color=GRAY,
+             alignment=PP_ALIGN.CENTER)
+    add_text(slide, Inches(1.5), Inches(6.3), Inches(10), Inches(0.4),
+             'Thank you  /  谢谢', font_size=16, color=LIGHT_GRAY,
+             alignment=PP_ALIGN.CENTER)
 
-    add_text_box(slide, Inches(1), Inches(5.5), Inches(8), Inches(0.4),
-                 "No one is alone in the fight against rare diseases.", font_size=14, color=GRAY,
-                 alignment=PP_ALIGN.CENTER)
 
-    add_text_box(slide, Inches(1), Inches(6.3), Inches(8), Inches(0.4),
-                 "rare2ai  |  罕见病联盟", font_size=14, color=AMBER_DIM,
-                 alignment=PP_ALIGN.CENTER)
-
+# ── Main ────────────────────────────────────────────────────────
 
 def main():
     prs = Presentation()
-    prs.slide_width = Inches(10)
-    prs.slide_height = Inches(7.5)
+    prs.slide_width = SLIDE_WIDTH
+    prs.slide_height = SLIDE_HEIGHT
 
-    make_cover(prs)
-    make_vision(prs)
-    make_features(prs)
-    make_tech(prs)
-    make_mcp(prs)
-    make_api(prs)
-    make_stats(prs)
-    make_audience(prs)
-    make_closing(prs)
+    slide_cover(prs)
+    slide_vision(prs)
+    slide_agent_first(prs)
+    slide_features(prs)
+    slide_tech(prs)
+    slide_mcp(prs)
+    slide_api(prs)
+    slide_scenarios(prs)
+    slide_contact(prs)
 
     prs.save(OUTPUT_PATH)
-    print(f"Presentation saved to: {OUTPUT_PATH}")
-    print(f"Total slides: {len(prs.slides)}")
+    print(f'Generated: {OUTPUT_PATH}')
+    print(f'Slides: {len(prs.slides)}')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
