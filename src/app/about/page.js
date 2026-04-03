@@ -1,7 +1,7 @@
 import Navbar from '@/components/Navbar';
 import { Users, BookOpen, Shield, Lightbulb, HandHeart, Mail, Globe } from 'lucide-react';
 
-export const metadata = { title: '关于我们 - 罕见病联盟' };
+export const metadata = { title: '关于我们 - Rare2AI' };
 
 export default function AboutPage() {
   return (
@@ -13,7 +13,7 @@ export default function AboutPage() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary-400/20 mb-4">
             <div className="w-6 h-6 rounded-full bg-primary-400" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-3">关于罕见病联盟</h1>
+          <h1 className="text-3xl font-bold text-white mb-3">关于 Rare2AI</h1>
           <p className="text-lg text-gray-400 max-w-lg mx-auto leading-relaxed">
             即使是最罕见的疾病，患者也不应该孤独面对
           </p>
@@ -27,7 +27,7 @@ export default function AboutPage() {
               我们的使命
             </h2>
             <p className="text-gray-400 leading-relaxed">
-              罕见病联盟致力于为罕见病患者、家属和研究者搭建一个温暖、专业的交流互助平台。
+              Rare2AI 致力于为罕见病患者、家属和研究者搭建一个温暖、专业的交流互助平台。
               全球有超过 7,000 种罕见病，影响着约 3 亿人。在中国，罕见病患者超过 2,000 万。
               他们中的很多人，确诊之路漫长而孤独。我们希望通过这个平台，让信息流通、让经验共享、让温暖传递。
             </p>

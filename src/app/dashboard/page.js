@@ -12,7 +12,7 @@ import {
   getRecentErrors,
 } from '@/data/analytics';
 
-export const metadata = { title: 'API 分析面板 - 罕见病联盟' };
+export const metadata = { title: 'API 分析面板 - Rare2AI' };
 export const dynamic = 'force-dynamic';
 
 function StatCard({ icon: Icon, label, value, sub, color = 'text-white' }) {

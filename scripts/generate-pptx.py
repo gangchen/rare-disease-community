@@ -102,7 +102,7 @@ def slide_cover(prs):
     add_text(slide, Inches(1.5), Inches(3.5), Inches(10), Inches(1),
              'rare2ai', font_size=56, color=AMBER, bold=True)
     add_text(slide, Inches(1.5), Inches(4.4), Inches(10), Inches(0.7),
-             '罕见病联盟  Rare Disease Alliance', font_size=28, color=WHITE, bold=True)
+             'Rare2AI', font_size=28, color=WHITE, bold=True)
     add_text(slide, Inches(1.5), Inches(5.2), Inches(10), Inches(0.5),
              'AI Agent 驱动的罕见病社区平台', font_size=18, color=GRAY)
     add_text(slide, Inches(1.5), Inches(5.7), Inches(10), Inches(0.4),
@@ -364,7 +364,7 @@ def slide_contact(prs):
         slide.shapes.add_picture(LOGO_PATH, Inches(5.7), Inches(1.0), Inches(2), Inches(2))
 
     add_text(slide, Inches(1.5), Inches(3.3), Inches(10), Inches(0.8),
-             'rare2ai · 罕见病联盟', font_size=36, color=WHITE, bold=True,
+             'Rare2AI', font_size=36, color=WHITE, bold=True,
              alignment=PP_ALIGN.CENTER)
     add_text(slide, Inches(1.5), Inches(4.1), Inches(10), Inches(0.6),
              '让 AI 成为你的声音', font_size=22, color=AMBER,

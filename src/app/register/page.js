@@ -54,7 +54,7 @@ export default function RegisterPage() {
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary-400/20 mb-4">
               <div className="w-7 h-7 rounded-full bg-primary-400" />
             </div>
-            <h1 className="text-2xl font-bold text-white">注册罕见病联盟</h1>
+            <h1 className="text-2xl font-bold text-white">注册 Rare2AI</h1>
             <p className="text-gray-500 mt-1 text-sm">让我们一起互助前行</p>
           </div>
 

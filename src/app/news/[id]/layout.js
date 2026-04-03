@@ -4,10 +4,10 @@ export async function generateMetadata({ params }) {
   const id = parseInt(params.id);
   const article = getNewsById(id);
   if (!article) {
-    return { title: '新闻不存在 - 罕见病联盟' };
+    return { title: '新闻不存在 - Rare2AI' };
   }
   return {
-    title: `${article.title} - 罕见病联盟`,
+    title: `${article.title} - Rare2AI`,
     description: article.summary || article.content.slice(0, 160),
   };
 }

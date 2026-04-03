@@ -214,7 +214,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="border-t border-surface-600 py-8 px-4">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-gray-500 text-sm">&copy; 2026 罕见病联盟</p>
+          <p className="text-gray-500 text-sm">&copy; 2026 Rare2AI</p>
           <div className="flex items-center gap-6 text-sm text-gray-500">
             <Link href="/diseases" className="hover:text-gray-300 transition-colors">病种分类</Link>
             <Link href="/posts" className="hover:text-gray-300 transition-colors">社区</Link>

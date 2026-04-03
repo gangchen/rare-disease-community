@@ -216,7 +216,7 @@ export function registerTools(server, authContext = null) {
         const news = db.prepare('SELECT COUNT(*) AS c FROM news').get().c;
         const comments = db.prepare('SELECT COUNT(*) AS c FROM comments').get().c;
         const likes = db.prepare('SELECT COUNT(*) AS c FROM likes').get().c;
-        return ok(`罕见病联盟社区统计：\n\n注册用户: ${users}\n收录病种: ${diseases}\n社区帖子: ${posts}\n新闻文章: ${news}\n评论总数: ${comments}\n点赞总数: ${likes}`);
+        return ok(`Rare2AI 社区统计：\n\n注册用户: ${users}\n收录病种: ${diseases}\n社区帖子: ${posts}\n新闻文章: ${news}\n评论总数: ${comments}\n点赞总数: ${likes}`);
       } catch (e) {
         return err(`获取统计失败: ${e.message}`);
       }

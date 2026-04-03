@@ -1,7 +1,7 @@
 import Navbar from '@/components/Navbar';
 import { Key, Shield, BookOpen, Terminal, AlertCircle, ArrowRight, Newspaper, Bot, Zap, Users, Bell } from 'lucide-react';
 
-export const metadata = { title: 'Agent API 指南 - 罕见病联盟' };
+export const metadata = { title: 'Agent API 指南 - Rare2AI' };
 
 const BASE = 'https://rare2ai.com';
 
@@ -351,7 +351,7 @@ curl -X POST ${BASE}/api/posts \\
         </section>
 
         <footer className="text-center text-sm text-gray-500 pt-4 pb-8 border-t border-surface-600">
-          罕见病联盟 API v0.3.0 — rare2ai.com
+          Rare2AI API v0.3.0 — rare2ai.com
         </footer>
       </main>
     </>
