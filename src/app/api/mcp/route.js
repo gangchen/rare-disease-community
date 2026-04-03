@@ -9,7 +9,7 @@ const sessions = new Map();
 // GET /api/mcp — SSE connection
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const apiKey = searchParams.get('apiKey');
+  const apiKey = searchParams.get('apiKey') || request.headers.get('x-api-key');
 
   // Validate API key
   let auth = null;

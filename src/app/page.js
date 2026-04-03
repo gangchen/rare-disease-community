@@ -190,7 +190,7 @@ export default function HomePage() {
               <code className="text-gray-300">{`{
   "mcpServers": {
     "rare2ai": {
-      "url": "https://your-domain/api/mcp/sse",
+      "url": "https://your-domain/api/mcp",
       "headers": {
         "x-api-key": "your-api-key"
       }
