@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
-import { User, Mail, FileText, Key, Plus, Trash2, Copy, Check, LogOut } from 'lucide-react';
+import { User, Mail, FileText, Key, Plus, Trash2, Copy, Check, LogOut, HeartPulse, Link2, Unlink } from 'lucide-react';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -17,6 +17,10 @@ export default function ProfilePage() {
   const [newKeyName, setNewKeyName] = useState('');
   const [creatingKey, setCreatingKey] = useState(false);
   const [copiedKey, setCopiedKey] = useState('');
+  const [gene2aiKey, setGene2aiKey] = useState('');
+  const [gene2aiConfigured, setGene2aiConfigured] = useState(false);
+  const [gene2aiMasked, setGene2aiMasked] = useState('');
+  const [savingGene2ai, setSavingGene2ai] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -49,6 +53,16 @@ export default function ProfilePage() {
     })
       .then((r) => r.ok ? r.json() : { items: [] })
       .then((data) => setApiKeys(data.items || []));
+
+    // Fetch Gene2AI key status
+    fetch('/api/agent/gene2ai-key', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.ok ? r.json() : {})
+      .then((data) => {
+        setGene2aiConfigured(!!data.configured);
+        setGene2aiMasked(data.maskedKey || '');
+      });
   }, [router]);
 
   async function handleSave() {
@@ -305,6 +319,96 @@ export default function ProfilePage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* Gene2AI Health Data */}
+        <div className="bg-surface-800 rounded-2xl border border-surface-600 p-6 mb-8">
+          <div className="flex items-center gap-2 mb-6">
+            <HeartPulse className="w-5 h-5 text-green-400" />
+            <h2 className="text-lg font-bold text-white">Gene2AI 健康数据</h2>
+          </div>
+
+          <p className="text-sm text-gray-400 mb-4">
+            绑定 Gene2AI API Key 后，AI 助手可以解读你的基因报告、体检指标和用药风险。
+            <a href="https://gene2.ai" target="_blank" rel="noopener noreferrer" className="text-primary-400 hover:underline ml-1">
+              前往 gene2.ai 获取
+            </a>
+          </p>
+
+          {gene2aiConfigured ? (
+            <div className="flex items-center justify-between px-4 py-3 bg-surface-700 rounded-xl">
+              <div className="flex items-center gap-2">
+                <Link2 className="w-4 h-4 text-green-400" />
+                <div>
+                  <p className="text-sm font-medium text-white">已绑定</p>
+                  <p className="text-xs text-gray-500">{gene2aiMasked}</p>
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  const token = localStorage.getItem('token');
+                  if (!token) return;
+                  await fetch('/api/agent/gene2ai-key', {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  setGene2aiConfigured(false);
+                  setGene2aiMasked('');
+                  setGene2aiKey('');
+                  setSuccess('Gene2AI 已解绑');
+                  setTimeout(() => setSuccess(''), 3000);
+                }}
+                className="flex items-center gap-1 text-sm text-red-400 hover:text-red-300 transition"
+              >
+                <Unlink className="w-3.5 h-3.5" />
+                解绑
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                type="password"
+                value={gene2aiKey}
+                onChange={(e) => setGene2aiKey(e.target.value)}
+                placeholder="粘贴 Gene2AI API Key"
+                className="flex-1 px-3 py-2.5 rounded-xl bg-surface-700 border border-surface-600 text-white placeholder-gray-500 focus:border-primary-400 focus:ring-1 focus:ring-primary-400/20 outline-none transition text-sm"
+              />
+              <button
+                onClick={async () => {
+                  if (!gene2aiKey.trim()) return;
+                  const token = localStorage.getItem('token');
+                  if (!token) return;
+                  setSavingGene2ai(true);
+                  try {
+                    const res = await fetch('/api/agent/gene2ai-key', {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                      body: JSON.stringify({ key: gene2aiKey.trim() }),
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.configured) {
+                      setGene2aiConfigured(true);
+                      setGene2aiMasked(data.maskedKey);
+                      setGene2aiKey('');
+                      setSuccess('Gene2AI 绑定成功');
+                      setTimeout(() => setSuccess(''), 3000);
+                    } else {
+                      setError('绑定失败');
+                    }
+                  } catch {
+                    setError('网络错误');
+                  } finally {
+                    setSavingGene2ai(false);
+                  }
+                }}
+                disabled={savingGene2ai || !gene2aiKey.trim()}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-green-500 text-white rounded-xl text-sm font-medium hover:bg-green-400 transition disabled:opacity-50 shrink-0"
+              >
+                <Link2 className="w-4 h-4" />
+                {savingGene2ai ? '绑定中...' : '绑定'}
+              </button>
             </div>
           )}
         </div>

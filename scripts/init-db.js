@@ -41,7 +41,8 @@ db.exec(`
     salt TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'user',
     join_date TEXT NOT NULL,
-    bio TEXT DEFAULT ''
+    bio TEXT DEFAULT '',
+    gene2ai_key TEXT
   );
 
   CREATE TABLE user_diseases (
@@ -171,6 +172,27 @@ db.exec(`
     avg_response_ms INTEGER DEFAULT 0,
     PRIMARY KEY (date, endpoint)
   );
+
+  CREATE TABLE chat_sessions (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER,
+    title TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+  );
+
+  CREATE TABLE chat_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    tool_calls TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX idx_chat_msg_session ON chat_messages(session_id, created_at);
 `);
 
 console.log('数据库表创建完成');

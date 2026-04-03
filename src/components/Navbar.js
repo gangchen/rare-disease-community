@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 const NAV_ITEMS = [
   { href: '/posts', label: '社区' },
   { href: '/news', label: '新闻' },
+  { href: '/agent', label: 'AI 助手' },
   { href: '/dashboard', label: '分析' },
   { href: '/api-docs', label: 'API' },
 ];
