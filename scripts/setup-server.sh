@@ -104,6 +104,7 @@ RestartSec=5
 Environment=NODE_ENV=production
 Environment=PORT=3000
 Environment=HOSTNAME=0.0.0.0
+EnvironmentFile=-/home/app/rare-disease-community/.env.local
 
 # 日志
 StandardOutput=journal

@@ -218,6 +218,48 @@ if (!existingTables.includes('api_stats_daily')) {
 // --- 未来的迁移在这里追加 ---
 // if (!existingTables.includes('xxx')) { ... }
 
+// --- chat_sessions 表 ---
+if (!existingTables.includes('chat_sessions')) {
+  db.exec(`
+    CREATE TABLE chat_sessions (
+      id TEXT PRIMARY KEY,
+      user_id INTEGER,
+      title TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    );
+  `);
+  console.log('✓ 创建 chat_sessions 表');
+  migrated++;
+}
+
+// --- chat_messages 表 ---
+if (!existingTables.includes('chat_messages')) {
+  db.exec(`
+    CREATE TABLE chat_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL,
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      tool_calls TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
+    );
+    CREATE INDEX idx_chat_msg_session ON chat_messages(session_id, created_at);
+  `);
+  console.log('✓ 创建 chat_messages 表');
+  migrated++;
+}
+
+// --- users.gene2ai_key 列 ---
+const userColumns = db.prepare("PRAGMA table_info(users)").all().map(c => c.name);
+if (!userColumns.includes('gene2ai_key')) {
+  db.exec("ALTER TABLE users ADD COLUMN gene2ai_key TEXT");
+  console.log('✓ 添加 users.gene2ai_key 列');
+  migrated++;
+}
+
 db.close();
 
 if (migrated === 0) {
