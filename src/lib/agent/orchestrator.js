@@ -29,7 +29,6 @@ async function callKimi(apiKey, messages, tools) {
   const body = {
     model: KIMI_MODEL,
     messages,
-    temperature: 0.7,
   };
   if (tools && tools.length > 0) {
     body.tools = tools;
