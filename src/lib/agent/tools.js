@@ -141,17 +141,6 @@ const browse_news = {
 
 // ========== Gene2.ai Health Tools ==========
 
-const MAX_TOOL_RESPONSE = 8000; // chars, ~2000 tokens
-
-function truncateResponse(text) {
-  if (text.length <= MAX_TOOL_RESPONSE) return text;
-  return text.slice(0, MAX_TOOL_RESPONSE) + '\n\n...(数据已截断，如需更多细节请指定具体类别或指标)';
-}
-
-function gene2aiResult(data) {
-  return truncateResponse(JSON.stringify(data));
-}
-
 function getGene2aiClient(context) {
   if (!context.gene2aiKey) {
     return null;
@@ -167,7 +156,7 @@ const get_health_profile = {
     const client = getGene2aiClient(context);
     if (!client) return '尚未绑定 Gene2AI 健康账号。请前往「个人中心」绑定 Gene2AI API Key 后再试。';
     const data = await client.getProfile();
-    return gene2aiResult(data);
+    return JSON.stringify(data);
   },
 };
 
@@ -179,7 +168,7 @@ const get_risk_overview = {
     const client = getGene2aiClient(context);
     if (!client) return '尚未绑定 Gene2AI 健康账号。请前往「个人中心」绑定 Gene2AI API Key。';
     const data = await client.getRiskOverview();
-    return gene2aiResult(data);
+    return JSON.stringify(data);
   },
 };
 
@@ -197,7 +186,7 @@ const get_genomic_links = {
     const client = getGene2aiClient(context);
     if (!client) return '尚未绑定 Gene2AI 健康账号。请前往「个人中心」绑定 Gene2AI API Key。';
     const data = await client.getGenomicLinks(indicatorCode);
-    return gene2aiResult(data);
+    return JSON.stringify(data);
   },
 };
 
@@ -215,7 +204,7 @@ const get_full_records = {
     const client = getGene2aiClient(context);
     if (!client) return '尚未绑定 Gene2AI 健康账号。请前往「个人中心」绑定 Gene2AI API Key。';
     const data = await client.getFullRecords({ category, subcategory, format: 'grouped' });
-    return gene2aiResult(data);
+    return JSON.stringify(data);
   },
 };
 
@@ -227,7 +216,7 @@ const get_lab_genomic_summary = {
     const client = getGene2aiClient(context);
     if (!client) return '尚未绑定 Gene2AI 健康账号。请前往「个人中心」绑定 Gene2AI API Key。';
     const data = await client.getLabGenomicSummary();
-    return gene2aiResult(data);
+    return JSON.stringify(data);
   },
 };
 
