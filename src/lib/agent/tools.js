@@ -313,13 +313,16 @@ export const ALL_TOOLS = [
 ];
 
 /**
- * Convert tools to Gemini function declarations format.
+ * Convert tools to OpenAI-compatible tools format (used by Kimi/Moonshot).
  */
-export function getGeminiFunctionDeclarations() {
+export function getOpenAITools() {
   return ALL_TOOLS.map(t => ({
-    name: t.name,
-    description: t.description,
-    parameters: t.parameters,
+    type: 'function',
+    function: {
+      name: t.name,
+      description: t.description,
+      parameters: t.parameters,
+    },
   }));
 }
 

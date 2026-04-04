@@ -1,6 +1,6 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
 const CATEGORIES = ['topic', 'experience', 'question'];
+
+const KIMI_API_URL = 'https://api.moonshot.cn/v1/chat/completions';
 
 const PROMPT = `You are a post classifier for a rare disease community. Classify the following post into exactly one category:
 - "experience": The author shares personal treatment experience, care tips, recovery stories, medication reviews, or practical guides.
@@ -13,31 +13,47 @@ Post content (first 500 chars): {content}
 Reply with ONLY one word: topic, experience, or question.`;
 
 /**
- * Classify a post using Gemini API.
+ * Classify a post using Kimi API.
  * Falls back to keyword-based classification if API key is not configured or call fails.
  */
 export async function classifyPost(title, content) {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.KIMI_API_KEY;
   if (apiKey) {
     try {
-      return await classifyWithGemini(apiKey, title, content);
+      return await classifyWithKimi(apiKey, title, content);
     } catch (e) {
-      console.warn('Gemini classification failed, falling back to keywords:', e.message);
+      console.warn('Kimi classification failed, falling back to keywords:', e.message);
     }
   }
   return classifyByKeywords(title, content);
 }
 
-async function classifyWithGemini(apiKey, title, content) {
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
+async function classifyWithKimi(apiKey, title, content) {
   const prompt = PROMPT
     .replace('{title}', title)
     .replace('{content}', (content || '').slice(0, 500));
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text().trim().toLowerCase();
+  const res = await fetch(KIMI_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'moonshot-v1-8k',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.1,
+      max_tokens: 10,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `Kimi API error: ${res.status}`);
+  }
+
+  const data = await res.json();
+  const text = (data.choices?.[0]?.message?.content || '').trim().toLowerCase();
 
   if (CATEGORIES.includes(text)) return text;
 

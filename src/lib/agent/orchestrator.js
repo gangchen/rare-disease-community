@@ -1,5 +1,7 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { getGeminiFunctionDeclarations, executeTool } from './tools';
+import { getOpenAITools, executeTool } from './tools';
+
+const KIMI_API_URL = 'https://api.moonshot.cn/v1/chat/completions';
+const KIMI_MODEL = 'moonshot-v1-32k';
 
 const SYSTEM_PROMPT = `你是 Rare2AI 罕见病社区的健康助手。
 
@@ -23,79 +25,108 @@ const SYSTEM_PROMPT = `你是 Rare2AI 罕见病社区的健康助手。
 
 const MAX_TOOL_ROUNDS = 5;
 
+async function callKimi(apiKey, messages, tools) {
+  const body = {
+    model: KIMI_MODEL,
+    messages,
+    temperature: 0.7,
+  };
+  if (tools && tools.length > 0) {
+    body.tools = tools;
+  }
+
+  const res = await fetch(KIMI_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `Kimi API error: ${res.status}`);
+  }
+
+  return res.json();
+}
+
 /**
  * Run the agent orchestrator.
  * Yields events: { type: 'thinking'|'text'|'done', ... }
  */
 export async function* runAgent({ message, history, context }) {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.KIMI_API_KEY;
   if (!apiKey) {
     yield { type: 'text', content: '服务暂时不可用（AI 引擎未配置）。请联系管理员。' };
     yield { type: 'done' };
     return;
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-2.0-flash',
-    systemInstruction: SYSTEM_PROMPT,
-  });
+  const tools = getOpenAITools();
 
-  const tools = [{ functionDeclarations: getGeminiFunctionDeclarations() }];
-
-  // Build conversation contents from history
-  const contents = [];
+  // Build messages array
+  const messages = [
+    { role: 'system', content: SYSTEM_PROMPT },
+  ];
   for (const msg of history) {
-    contents.push({
-      role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: msg.content }],
-    });
+    messages.push({ role: msg.role, content: msg.content });
   }
-  contents.push({ role: 'user', parts: [{ text: message }] });
+  messages.push({ role: 'user', content: message });
 
   let round = 0;
   while (round < MAX_TOOL_ROUNDS) {
     round++;
 
-    const result = await model.generateContent({ contents, tools });
-    const response = result.response;
-    const candidate = response.candidates?.[0];
-    if (!candidate) {
+    let result;
+    try {
+      result = await callKimi(apiKey, messages, tools);
+    } catch (err) {
+      yield { type: 'text', content: `抱歉，AI 服务出错：${err.message}` };
+      yield { type: 'done' };
+      return;
+    }
+
+    const choice = result.choices?.[0];
+    if (!choice) {
       yield { type: 'text', content: '抱歉，我暂时无法回答。请稍后再试。' };
       yield { type: 'done' };
       return;
     }
 
-    const parts = candidate.content?.parts || [];
+    const assistantMessage = choice.message;
 
-    // Check for function calls
-    const functionCalls = parts.filter(p => p.functionCall);
-    if (functionCalls.length > 0) {
-      // Add model response to contents
-      contents.push({ role: 'model', parts });
+    // Check for tool calls
+    if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+      // Add assistant message with tool_calls to history
+      messages.push(assistantMessage);
 
-      // Execute each function call
-      const functionResponses = [];
-      for (const part of functionCalls) {
-        const { name, args } = part.functionCall;
-        yield { type: 'thinking', tool: name };
-        const toolResult = await executeTool(name, args || {}, context);
-        functionResponses.push({
-          functionResponse: {
-            name,
-            response: { result: toolResult },
-          },
+      // Execute each tool call
+      for (const toolCall of assistantMessage.tool_calls) {
+        const fnName = toolCall.function.name;
+        let fnArgs = {};
+        try {
+          fnArgs = JSON.parse(toolCall.function.arguments || '{}');
+        } catch {
+          // ignore parse errors
+        }
+
+        yield { type: 'thinking', tool: fnName };
+        const toolResult = await executeTool(fnName, fnArgs, context);
+
+        // Add tool response
+        messages.push({
+          role: 'tool',
+          tool_call_id: toolCall.id,
+          content: typeof toolResult === 'string' ? toolResult : JSON.stringify(toolResult),
         });
       }
-
-      // Add function responses and continue the loop
-      contents.push({ role: 'user', parts: functionResponses });
       continue;
     }
 
-    // No function calls — extract text response
-    const textParts = parts.filter(p => p.text);
-    const text = textParts.map(p => p.text).join('');
+    // No tool calls — return text response
+    const text = assistantMessage.content || '';
     if (text) {
       yield { type: 'text', content: text };
     }
