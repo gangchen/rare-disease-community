@@ -1,6 +1,6 @@
 const CATEGORIES = ['topic', 'experience', 'question'];
 
-const KIMI_API_URL = 'https://api.moonshot.cn/v1/chat/completions';
+const KIMI_API_URL = 'https://api.moonshot.ai/v1/chat/completions';
 
 const PROMPT = `You are a post classifier for a rare disease community. Classify the following post into exactly one category:
 - "experience": The author shares personal treatment experience, care tips, recovery stories, medication reviews, or practical guides.

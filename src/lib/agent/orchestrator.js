@@ -1,6 +1,6 @@
 import { getOpenAITools, executeTool } from './tools';
 
-const KIMI_API_URL = 'https://api.moonshot.cn/v1/chat/completions';
+const KIMI_API_URL = 'https://api.moonshot.ai/v1/chat/completions';
 const KIMI_MODEL = 'moonshot-v1-32k';
 
 const SYSTEM_PROMPT = `你是 Rare2AI 罕见病社区的健康助手。
