@@ -23,6 +23,32 @@ export default function AgentPage() {
     scrollToBottom();
   }, [messages, thinking, scrollToBottom]);
 
+  // Load last session on mount
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    fetch('/api/agent/sessions', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data?.sessions?.length) return;
+        const lastSession = data.sessions[0];
+        // Load messages for the last session
+        fetch(`/api/agent/sessions?id=${lastSession.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then(r => r.ok ? r.json() : null)
+          .then(msgData => {
+            if (msgData?.messages?.length) {
+              setSessionId(lastSession.id);
+              setMessages(msgData.messages.map(m => ({ role: m.role, content: m.content })));
+            }
+          });
+      });
+  }, []);
+
   // Auto-resize textarea
   useEffect(() => {
     const ta = textareaRef.current;
