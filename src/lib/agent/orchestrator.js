@@ -24,6 +24,25 @@ const SYSTEM_PROMPT = `你是 Rare2AI 罕见病社区的健康助手。
 "我可以参考你的 Gene2AI 健康档案来提供个性化建议，需要我这样做吗？"`;
 
 const MAX_TOOL_ROUNDS = 5;
+const MAX_CONTEXT_CHARS = 100000; // ~25k tokens, well under kimi-k2.5 limit
+
+function estimateChars(messages) {
+  let total = 0;
+  for (const msg of messages) {
+    if (msg.content) total += msg.content.length;
+    if (msg.tool_calls) total += JSON.stringify(msg.tool_calls).length;
+  }
+  return total;
+}
+
+function trimHistory(messages) {
+  // messages[0] is system prompt, last element is user message.
+  // Trim oldest history messages (index 1+) until under budget.
+  while (messages.length > 2 && estimateChars(messages) > MAX_CONTEXT_CHARS) {
+    messages.splice(1, 1);
+  }
+  return messages;
+}
 
 async function callKimi(apiKey, messages, tools) {
   const body = {
@@ -34,21 +53,29 @@ async function callKimi(apiKey, messages, tools) {
     body.tools = tools;
   }
 
-  const res = await fetch(KIMI_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60000);
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || `Kimi API error: ${res.status}`);
+  try {
+    const res = await fetch(KIMI_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `Kimi API error: ${res.status}`);
+    }
+
+    return res.json();
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return res.json();
 }
 
 /**
@@ -73,6 +100,7 @@ export async function* runAgent({ message, history, context }) {
     messages.push({ role: msg.role, content: msg.content });
   }
   messages.push({ role: 'user', content: message });
+  trimHistory(messages);
 
   let round = 0;
   while (round < MAX_TOOL_ROUNDS) {
@@ -114,11 +142,15 @@ export async function* runAgent({ message, history, context }) {
         yield { type: 'thinking', tool: fnName };
         const toolResult = await executeTool(fnName, fnArgs, context);
 
-        // Add tool response
+        // Add tool response (truncate if too large)
+        let resultStr = typeof toolResult === 'string' ? toolResult : JSON.stringify(toolResult);
+        if (resultStr.length > 20000) {
+          resultStr = resultStr.slice(0, 20000) + '\n...(结果已截断，数据量过大)';
+        }
         messages.push({
           role: 'tool',
           tool_call_id: toolCall.id,
-          content: typeof toolResult === 'string' ? toolResult : JSON.stringify(toolResult),
+          content: resultStr,
         });
       }
       continue;

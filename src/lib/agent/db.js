@@ -66,7 +66,7 @@ export function getOrCreateSession(sessionId, userId) {
 export function getSessionHistory(sessionId, limit = 20) {
   const db = getDb();
   return db.prepare(
-    'SELECT role, content FROM chat_messages WHERE session_id = ? ORDER BY created_at DESC LIMIT ?'
+    'SELECT role, content FROM chat_messages WHERE session_id = ? AND role IN (\'user\', \'assistant\') AND content != \'\' ORDER BY created_at DESC LIMIT ?'
   ).all(sessionId, limit).reverse();
 }
 

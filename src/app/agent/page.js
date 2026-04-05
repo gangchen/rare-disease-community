@@ -73,11 +73,19 @@ export default function AgentPage() {
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers.Authorization = `Bearer ${token}`;
 
+    const abortController = new AbortController();
+    let inactivityTimer = setTimeout(() => abortController.abort(), 90000);
+    function resetTimer() {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => abortController.abort(), 90000);
+    }
+
     try {
       const res = await fetch('/api/agent/chat', {
         method: 'POST',
         headers,
         body: JSON.stringify({ message: msg, sessionId }),
+        signal: abortController.signal,
       });
 
       if (!res.ok) {
@@ -104,6 +112,7 @@ export default function AgentPage() {
 
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
+          resetTimer();
           try {
             const data = JSON.parse(line.slice(6));
             if (data.type === 'thinking') {
@@ -133,8 +142,12 @@ export default function AgentPage() {
         }
       }
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'assistant', content: '网络错误，请检查网络连接后重试。' }]);
+      const errorMsg = err.name === 'AbortError'
+        ? '回复超时，请稍后再试。如果问题持续，请开始新对话。'
+        : '网络错误，请检查网络连接后重试。';
+      setMessages(prev => [...prev, { role: 'assistant', content: errorMsg }]);
     } finally {
+      clearTimeout(inactivityTimer);
       setLoading(false);
       setThinking(null);
     }

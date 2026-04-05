@@ -11,27 +11,35 @@ export class Gene2aiClient {
 
   async request(path, options = {}) {
     const url = `${BASE_URL}${path}`;
-    const res = await fetch(url, {
-      ...options,
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        ...options.headers,
-      },
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
 
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      const code = body.error || body.code || `HTTP ${res.status}`;
-      const messages = {
-        missing_token: '未配置 Gene2AI API Key，请在个人中心绑定。',
-        invalid_token: 'Gene2AI API Key 无效，请检查后重新绑定。',
-        token_expired: 'Gene2AI API Key 已过期（30天有效），请前往 gene2.ai/api-keys 重新生成。',
-        key_revoked: 'Gene2AI API Key 已被撤销，请前往 gene2.ai/api-keys 重新生成。',
-      };
-      throw new Error(messages[code] || `Gene2AI 请求失败: ${code}`);
+    try {
+      const res = await fetch(url, {
+        ...options,
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          ...options.headers,
+        },
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const code = body.error || body.code || `HTTP ${res.status}`;
+        const messages = {
+          missing_token: '未配置 Gene2AI API Key，请在个人中心绑定。',
+          invalid_token: 'Gene2AI API Key 无效，请检查后重新绑定。',
+          token_expired: 'Gene2AI API Key 已过期（30天有效），请前往 gene2.ai/api-keys 重新生成。',
+          key_revoked: 'Gene2AI API Key 已被撤销，请前往 gene2.ai/api-keys 重新生成。',
+        };
+        throw new Error(messages[code] || `Gene2AI 请求失败: ${code}`);
+      }
+
+      return res.json();
+    } finally {
+      clearTimeout(timeout);
     }
-
-    return res.json();
   }
 
   /** Tier 1: Compact conclusions-only profile (~2-4KB), cacheable */
